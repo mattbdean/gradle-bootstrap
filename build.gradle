@@ -1,0 +1,13 @@
+buildscript {
+    ext.kotlinVersion = "0.10.4" // M10
+
+    repositories { mavenCentral() }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+    }
+}
+
+subprojects {
+    version = '0.0.1'
+}
+

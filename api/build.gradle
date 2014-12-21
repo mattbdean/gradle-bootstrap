@@ -1,0 +1,14 @@
+apply plugin: 'kotlin'
+
+sourceCompatibility = 1.6
+version = '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    testCompile "org.testng:testng:6.8.8"
+}
+
