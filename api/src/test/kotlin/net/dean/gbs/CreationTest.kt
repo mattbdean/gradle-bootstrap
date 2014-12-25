@@ -12,7 +12,7 @@ import org.testng.Assert
 
 public class CreationTest {
     public test fun basicCreate() {
-        val (proj, path) = newProject()
+        val (proj, path) = newProject("basic")
         proj.license = License.APACHE
         proj.add(Language.JAVA)
         proj.build.logging = LoggingFramework.SLF4J
@@ -52,8 +52,7 @@ public class CreationTest {
      * stackOffset is the amount of indicies to increase the base count by. A stackOffset of 0 would result in the
      * method that directly called this method, 1 would be the method that called the other method, etc.
      */
-    private fun newProject(stackOffset: Int = 0): Pair<Project, Path> {
-        val name = Thread.currentThread().getStackTrace()[2 + stackOffset].getMethodName()
+    private fun newProject(name: String): Pair<Project, Path> {
         val path = Paths.get("build/projects/$name")
         val proj = Project(name, "com.example.$name")
         // Delete the files before generating it so that if we want to examine the crated files after creation, we can.
