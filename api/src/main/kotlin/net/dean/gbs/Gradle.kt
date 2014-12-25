@@ -32,6 +32,9 @@ public class GradleBuild {
      * Adds a Gradle Plugin (see http://plugins.gradle.org)
      */
     public fun addGradlePlugin(plugin: Dependency) {
+        if (plugin.scope != Scope.CLASSPATH) {
+            throw IllegalArgumentException("Gradle plugins must use the 'classpath' scope")
+        }
         // TODO: Use plugins {} closure instead of the clunky buildscript dependencies
         if (Repository.JCENTER !in metaContext.repos) {
             // Gradle plugins are required to be in jCenter
@@ -57,11 +60,35 @@ public data class Dependency(public val group: String,
                              public val name: String,
                              public val version: String = "+", // use dynamic latest version
                              public val extension: String = "",
-                             public val scope: Scope = Scope.COMPILE) {
+                             public val scope: Scope = Scope.COMPILE) : Comparable<Dependency> {
+    override fun compareTo(other: Dependency): Int {
+        val scopeComp = scope.compareTo(other.scope)
+        if (scopeComp != 0) {
+            return scopeComp
+        } else {
+            val groupComp = group.compareTo(other.group)
+            if (groupComp != 0) {
+                return groupComp
+            } else {
+                val nameComp = name.compareTo(other.name)
+                if (nameComp != 0) {
+                    return nameComp
+                } else {
+                    val versionComp = version.compareTo(other.version)
+                    if (versionComp != 0) {
+                        return versionComp
+                    } else {
+                        return extension.compareTo(other.extension)
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Formats this dependency like how it would appear in a build.gradle file
      */
-    public fun depString(): String = "${scope.method} '${format()}'"
+    public fun gradleFormat(): String = "${scope.method} '${format()}'"
 
     /**
      * Formats this dependency in the <group>:<name>:<version> format, accounting for the extension if present.
@@ -70,9 +97,6 @@ public data class Dependency(public val group: String,
 }
 
 public enum class Repository(val method: String) {
-    class object {
-        val DEFAULT: Repository = MAVEN_CENTRAL
-    }
     JCENTER: Repository("jcenter()")
     MAVEN_CENTRAL: Repository("mavenCentral()")
 

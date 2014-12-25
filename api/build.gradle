@@ -12,3 +12,11 @@ dependencies {
     testCompile "org.testng:testng:6.8.8"
 }
 
+test {
+    useTestNG()
+    testLogging {
+        // Show stderr and stdout (useful for exceptions)
+        showStandardStreams = true
+    }
+}
+
