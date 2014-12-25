@@ -99,10 +99,6 @@ public data class Dependency(public val group: String,
 public enum class Repository(val method: String) {
     JCENTER: Repository("jcenter()")
     MAVEN_CENTRAL: Repository("mavenCentral()")
-
-    public fun configureOnto(build: GradleBuild, meta: Boolean) {
-        (if (meta) build.metaContext else build.projectContext).add(this)
-    }
 }
 
 /**

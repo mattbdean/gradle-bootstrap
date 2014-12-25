@@ -47,10 +47,7 @@ public class CreationTest {
 
     /**
      * Returns a Pair of a Project to its root Pat based on the calling method. The group will be
-     * "com.example.$callingMethodName" and its base path will be "build/projects/$callingMethodName".
-     *
-     * stackOffset is the amount of indicies to increase the base count by. A stackOffset of 0 would result in the
-     * method that directly called this method, 1 would be the method that called the other method, etc.
+     * "com.example.$name" and its base path will be "build/projects/$name
      */
     private fun newProject(name: String): Pair<Project, Path> {
         val path = Paths.get("build/projects/$name")

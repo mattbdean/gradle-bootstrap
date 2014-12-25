@@ -49,7 +49,7 @@ public class ProjectRenderer : AbstractRenderer<Project>() {
     private fun renderBuildscript(build: GradleBuild): List<String> {
         val context = build.metaContext
         if (context.deps.isEmpty() && context.repos.isEmpty())
-        // Nothing to do
+            // Nothing to do
             return listOf()
 
         val list: MutableList<String> = ArrayList()
