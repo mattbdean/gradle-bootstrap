@@ -1,4 +1,4 @@
-package net.dean.gbs
+package net.dean.gbs.api
 
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets

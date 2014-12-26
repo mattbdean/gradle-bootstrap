@@ -1,4 +1,4 @@
-package net.dean.gbs
+package net.dean.gbs.api
 
 /**
  * Supported testing frameworks

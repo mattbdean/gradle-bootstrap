@@ -1,4 +1,4 @@
-package net.dean.gbs
+package net.dean.gbs.api
 
 import java.nio.file.Path
 import java.nio.file.Files

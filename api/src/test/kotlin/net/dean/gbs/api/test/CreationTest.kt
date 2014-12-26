@@ -1,4 +1,4 @@
-package net.dean.gbs
+package net.dean.gbs.api.test
 
 import org.testng.annotations.Test as test
 import java.nio.file.Paths
@@ -9,6 +9,16 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.FileVisitResult
 import java.io.IOException
 import org.testng.Assert
+import net.dean.gbs.api.License
+import net.dean.gbs.api.Language
+import net.dean.gbs.api.LoggingFramework
+import net.dean.gbs.api.TestingFramework
+import net.dean.gbs.api.Repository
+import net.dean.gbs.api.Dependency
+import net.dean.gbs.api.Scope
+import net.dean.gbs.api.Exporter
+import net.dean.gbs.api.ProjectRenderer
+import net.dean.gbs.api.Project
 
 public class CreationTest {
     public test fun basicCreate() {

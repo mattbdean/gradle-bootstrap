@@ -1,6 +1,11 @@
-package net.dean.gbs
+package net.dean.gbs.api.test
 
 import org.testng.annotations.Test as test
+import net.dean.gbs.api.Language
+import net.dean.gbs.api.LoggingFramework
+import net.dean.gbs.api.Dependency
+import net.dean.gbs.api.Scope
+import net.dean.gbs.api.Project
 
 public class ProjectConfigTest {
     public test fun testAddLang() {
