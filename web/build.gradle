@@ -1,2 +1,29 @@
-// TODO - Server not implemented yet
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'net.swisstech:gradle-dropwizard:+'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.0'
+    }
+}
+
+apply plugin: "kotlin"
+apply plugin: "net.swisstech.dropwizard"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'io.dropwizard:dropwizard-core:0.7.1'
+    compile project(':api')
+}
+
+dropwizard {
+    mainClass = 'net.dean.gbs.web.HelloWorldApp'
+    dropwizardConfigFile = 'config/development.yml'
+}
+
 
