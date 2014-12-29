@@ -6,8 +6,7 @@ import java.util.HashMap
 /**
  * Represents a Gradle project
  */
-public class Project(val name: String, val group: String) {
-    public val version: String = "0.0.1"
+public class Project(val name: String, val group: String, val version: String = "0.0.1") {
     /** Set of directories to create */
     public val directoriesToCreate: MutableSet<String> = HashSet()
     public var license: License = License.NONE

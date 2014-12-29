@@ -9,6 +9,10 @@ buildscript {
     }
 }
 
+ext {
+    dropwizardVersion = '0.7.1'
+}
+
 apply plugin: "kotlin"
 apply plugin: "net.swisstech.dropwizard"
 
@@ -17,12 +21,18 @@ repositories {
 }
 
 dependencies {
-    compile 'io.dropwizard:dropwizard-core:0.7.1'
+    for (module in ['core', 'db', 'jackson', 'jdbi']) {
+        compile "io.dropwizard:dropwizard-$module:$dropwizardVersion"
+    }
+    runtime "com.h2database:h2:1.4.184"
     compile project(':api')
+
+    testCompile "org.testng:testng:6.8.13"
+    testCompile "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
 
 dropwizard {
-    mainClass = 'net.dean.gbs.web.HelloWorldApp'
+    mainClass = 'net.dean.gbs.web.GradleBootstrap'
     dropwizardConfigFile = 'config/development.yml'
 }
 

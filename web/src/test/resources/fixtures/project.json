@@ -1,0 +1,15 @@
+{
+  "id": "f3b4d46c-e691-4c6b-b7c7-feed491d0dbd",
+  "created_at": "2000-01-01T00:00:00Z",
+  "updated_at": "2000-01-01T00:00:00Z",
+  "name": "app",
+  "group": "com.example.app",
+  "version": "1.0",
+  "testing_framework": "testng",
+  "logging_framework": "slf4j",
+  "license": "apache",
+  "languages": [
+    "java",
+    "kotlin"
+  ]
+}
