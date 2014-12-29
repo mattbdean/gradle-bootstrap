@@ -20,6 +20,9 @@ import net.dean.gbs.web.resources.ProjectOptionsResource
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.dropwizard.jackson.FuzzyEnumModule
+import java.util.Date
+import org.joda.time.DateTime
+import org.joda.time.DateTimeZone
 
 public class GradleBootstrap : Application<GradleBootstrapConf>() {
     class object {
@@ -55,7 +58,7 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
 public class GradleBootstrapConf : Configuration() {
     public valid notNull jsonProperty val dataSource: DataSourceFactory = DataSourceFactory()
     class object {
-        fun configureObjectMapper(mapper: ObjectMapper) {
+        public platformStatic fun configureObjectMapper(mapper: ObjectMapper) {
             // Dates will now automatically be serialized into the ISO-8601 format
             mapper.setDateFormat(ISO8601DateFormat())
             // Use snake_case when serializing data
@@ -63,6 +66,8 @@ public class GradleBootstrapConf : Configuration() {
             // Case insensitive enum mapping among other things
             mapper.registerModule(FuzzyEnumModule())
         }
+
+        platformStatic fun getCurrentDate(): Date = DateTime(DateTimeZone.UTC).toDate()
     }
 }
 

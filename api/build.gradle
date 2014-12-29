@@ -9,11 +9,10 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    testCompile "org.testng:testng:6.8.8"
+    testCompile "junit:junit:4.11"
 }
 
 test {
-    useTestNG()
     testLogging {
         // Show stderr and stdout (useful for exceptions)
         showStandardStreams = true

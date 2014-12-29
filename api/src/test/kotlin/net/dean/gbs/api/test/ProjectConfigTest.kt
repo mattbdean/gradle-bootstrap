@@ -1,6 +1,6 @@
 package net.dean.gbs.api.test
 
-import org.testng.annotations.Test as test
+import org.junit.Test as test
 import net.dean.gbs.api.Language
 import net.dean.gbs.api.LoggingFramework
 import net.dean.gbs.api.Dependency

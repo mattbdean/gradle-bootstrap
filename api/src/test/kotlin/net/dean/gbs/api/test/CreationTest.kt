@@ -1,6 +1,5 @@
 package net.dean.gbs.api.test
 
-import org.testng.annotations.Test as test
 import java.nio.file.Paths
 import java.nio.file.Files
 import java.nio.file.Path
@@ -8,7 +7,6 @@ import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.FileVisitResult
 import java.io.IOException
-import org.testng.Assert
 import net.dean.gbs.api.License
 import net.dean.gbs.api.Language
 import net.dean.gbs.api.LoggingFramework
@@ -19,6 +17,8 @@ import net.dean.gbs.api.Scope
 import net.dean.gbs.api.Exporter
 import net.dean.gbs.api.ProjectRenderer
 import net.dean.gbs.api.Project
+import org.junit.Test as test
+import org.junit.Assert
 
 public class CreationTest {
     public test fun basicCreate() {
@@ -52,7 +52,7 @@ public class CreationTest {
         // Should have an exit value of 0
         val exitCode = process.waitFor()
         println("Finished")
-        Assert.assertEquals(exitCode, 0)
+        Assert.assertEquals(0, exitCode)
     }
 
     /**

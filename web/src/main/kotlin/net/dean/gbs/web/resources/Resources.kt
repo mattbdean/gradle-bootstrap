@@ -16,10 +16,11 @@ import net.dean.gbs.api.Project
 import java.util.UUID
 import java.util.Date
 import net.dean.gbs.web.db.ProjectDao
-import net.dean.gbs.web.ProjectModel
 import kotlin.properties.Delegates
 import net.dean.gbs.web.Parameter
 import net.dean.gbs.web.ParamLocation
+import net.dean.gbs.web.models.ProjectModel
+import net.dean.gbs.web.GradleBootstrapConf
 
 public trait Resource {
     /**
@@ -72,6 +73,33 @@ public trait Resource {
                 why = "One of ${allValues.map { it.name().toLowerCase() }.toString()} (case insensitive) was not provided",
                 param = param
         )
+    }
+
+    /**
+     * Asserts that the given parameter is:
+     *
+     * 1. Present (assertPresent)
+     * 2. param.value is a String
+     * 3. param.value is a valid UUID
+     *
+     * Returns a valid java.util.UUID if and only if all of the above is true.
+     */
+    public fun assertValidUuid(param: Parameter): UUID {
+        assertPresent(param)
+
+        val uuid = if (param.value is String) param.value!! as String else throw IllegalArgumentException("param.value must be a String")
+        val initException = { InvalidParamException(javaClass, "Invalid ID", param) }
+
+        try {
+            // http://stackoverflow.com/a/10693997/1275092
+            // fromString() does not have good validation logic
+            val fromStringUUID = UUID.fromString(uuid);
+            val toStringUUID = fromStringUUID.toString();
+            if (!toStringUUID.equals(uuid)) throw initException()
+            return fromStringUUID
+        } catch (e: IllegalArgumentException) {
+            throw initException()
+        }
     }
 
     /**
@@ -146,7 +174,7 @@ public class ProjectCreationResource(dao: ProjectDao) : ProjectResource(dao) {
             }
         }
 
-        val createdAt = Date()
+        val createdAt = GradleBootstrapConf.getCurrentDate()
         val model = ProjectModel.fromProject(proj, UUID.randomUUID(), createdAt, createdAt)
         dao.insert(model)
         return model
@@ -160,7 +188,7 @@ Path("/projects")
 Produces(MediaType.APPLICATION_JSON)
 public class ProjectBulkLookupResource(dao: ProjectDao) : ProjectResource(dao) {
     GET public fun fetch(): Iterator<ProjectModel> {
-        return dao.getOrdered()
+        return dao.getAll()
     }
 }
 
@@ -172,7 +200,9 @@ Produces(MediaType.APPLICATION_JSON)
 Consumes(MediaType.APPLICATION_JSON)
 public class ProjectLookupResource(dao: ProjectDao) : ProjectResource(dao) {
     GET public fun find(PathParam("id") id: String): ProjectModel {
-        return dao.get(id)
+        // TODO: Filter input
+        val uuid = assertValidUuid(Parameter("id", id, ParamLocation.URI))
+        return dao.get(uuid)
     }
 }
 

@@ -8,7 +8,6 @@ import net.dean.gbs.api.TestingFramework
 import net.dean.gbs.api.LoggingFramework
 import org.skife.jdbi.v2.sqlobject.Binder
 import org.skife.jdbi.v2.SQLStatement
-import net.dean.gbs.web.ProjectModel
 import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper
 import org.skife.jdbi.v2.sqlobject.SqlUpdate
 import org.skife.jdbi.v2.sqlobject.SqlQuery
@@ -18,6 +17,11 @@ import net.dean.gbs.api.Project
 import net.dean.gbs.api.License
 import org.skife.jdbi.v2.sqlobject.BinderFactory
 import java.util.UUID
+import net.dean.gbs.web.models.ProjectModel
+import org.skife.jdbi.v2.sqlobject.BindingAnnotation
+import java.lang.annotation.Retention
+import java.lang.annotation.Target
+import net.dean.gbs.web.models.Model
 
 val tableName = "projects"
 
@@ -37,7 +41,7 @@ private object Col {
 /**
  * This class provides a way to map a ResultSet to a ProjectModel
  */
-public class ProjectModelMapper : ResultSetMapper<net.dean.gbs.web.ProjectModel> {
+public class ProjectModelMapper : ResultSetMapper<ProjectModel> {
     override fun map(index: Int, r: ResultSet, ctx: StatementContext?): ProjectModel {
         // Use the Project class and ProjectModel.fromProject as a shortcut. Can be modified to use only a ProjectModel
         // later if necessary
@@ -64,9 +68,9 @@ public class ProjectModelMapper : ResultSetMapper<net.dean.gbs.web.ProjectModel>
  * This class provides a way to notate that this ProjectModel parameter will be bound to the SQLStatement using the
  * [ProjectModelBinderFactory] class.
  */
-org.skife.jdbi.v2.sqlobject.BindingAnnotation(javaClass<ProjectModelBinderFactory>())
-java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
-java.lang.annotation.Target(java.lang.annotation.ElementType.PARAMETER)
+BindingAnnotation(javaClass<ProjectModelBinderFactory>())
+Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+Target(java.lang.annotation.ElementType.PARAMETER)
 public annotation class BindProjectModel(/*public val exceptions: Array<String> = array()*/)
 
 /**
@@ -80,14 +84,14 @@ public class ProjectModelBinderFactory : BinderFactory {
                 val bindings = mapOf(
                         Col.id to arg.getId(),
                         Col.created to arg.getCreatedAt().getTime(),
-                        Col.updated to arg.getUpdatedAt().getTime(),
+                        Col.updated to arg.getCreatedAt().getTime(),
                         Col.name to arg.getName(),
                         Col.group to arg.getGroup(),
                         Col.version to arg.getVersion(),
                         Col.testing to arg.getTestingFramework(),
                         Col.logging to arg.getLoggingFramework(),
                         Col.license to arg.getLicense(),
-                        Col.languages to arg.getLanguages().join(",")
+                        Col.languages to arg.getLanguages().map { it.name().toLowerCase() }.join(",")
                 )
 
                 for ((key, value) in bindings)
@@ -99,10 +103,21 @@ public class ProjectModelBinderFactory : BinderFactory {
 }
 
 /**
+ * Provides a standard interface for retrieving models from the database
+ *
+ * M: Model type
+ */
+public trait DataAccessObject<M : Model<*>> {
+    public fun get(id: UUID): M
+    public fun getAll(): Iterator<M>
+    public fun insert(model: M)
+}
+
+/**
  * This trait provides the ability to perform CR(UD) operations on ProjectModels.
  */
 RegisterMapper(javaClass<ProjectModelMapper>())
-public trait ProjectDao {
+public trait ProjectDao : DataAccessObject<ProjectModel> {
 
     /**
      * Creates a table whose name is [tableName] if it does already exist.
@@ -139,18 +154,18 @@ public trait ProjectDao {
         :${Col.id},:${Col.created},:${Col.updated}
     )"""
     )
-    fun insert(BindProjectModel project: ProjectModel)
+    public override fun insert(BindProjectModel model: ProjectModel)
 
     /**
      * Retrieves a ProjectModel by its ID
      */
     SqlQuery("SELECT * FROM $tableName WHERE ${Col.id} = :${Col.id}")
-    fun get(Bind(Col.id) id: String): ProjectModel
+    public override fun get(Bind(Col.id) id: UUID): ProjectModel
 
     /**
      * Retrieves a list of ProjectModels ordered by group
      */
     SqlQuery("SELECT * FROM $tableName ORDER BY ${Col.group} DESC")
-    fun getOrdered(): Iterator<ProjectModel>
+    public override fun getAll(): Iterator<ProjectModel>
 }
 

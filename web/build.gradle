@@ -24,10 +24,9 @@ dependencies {
     for (module in ['core', 'db', 'jackson', 'jdbi']) {
         compile "io.dropwizard:dropwizard-$module:$dropwizardVersion"
     }
-    runtime "com.h2database:h2:1.4.184"
     compile project(':api')
+    runtime "com.h2database:h2:1.4.184"
 
-    testCompile "org.testng:testng:6.8.13"
     testCompile "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
 
