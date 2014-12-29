@@ -28,8 +28,6 @@ dependencies {
     runtime "com.h2database:h2:1.4.184"
     compile project(':api')
     compile "org.slf4j:slf4j-api:$slf4jVersion"
-    testCompile 'org.slf4j:slf4j-simple:$slf4jVersion'
-
     testCompile "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
 
