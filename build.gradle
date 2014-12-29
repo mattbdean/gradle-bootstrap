@@ -7,6 +7,10 @@ buildscript {
     }
 }
 
+ext {
+    slf4jVersion = "1.7.9"
+}
+
 subprojects {
     version = '0.0.1'
 }

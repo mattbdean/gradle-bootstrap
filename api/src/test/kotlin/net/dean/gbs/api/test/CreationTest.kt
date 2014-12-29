@@ -21,6 +21,8 @@ import org.junit.Test as test
 import org.junit.Assert
 
 public class CreationTest {
+    private val processLogger = ProcessOutputAdapter()
+
     public test fun basicCreate() {
         val (proj, path) = newProject("basic")
         proj.license = License.APACHE
@@ -47,9 +49,10 @@ public class CreationTest {
         val process = ProcessBuilder()
                 .directory(dir)
                 .command(*command)
-                .inheritIO()
                 .start()
         // Should have an exit value of 0
+
+        processLogger.attach(process, rootPath.getFileName().toString())
         val exitCode = process.waitFor()
         println("Finished")
         Assert.assertEquals(0, exitCode)
