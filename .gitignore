@@ -13,5 +13,4 @@ hs_err_pid*
 test-downloads/
 src/test/resources/secrets.json
 todo.txt
-gradle.properties
 
