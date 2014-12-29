@@ -57,4 +57,5 @@ public enum class BuildStatus {
     ENQUEUED
     BUILDING
     READY
+    ERRORED
 }

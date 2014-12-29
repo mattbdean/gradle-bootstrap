@@ -15,13 +15,13 @@ import net.dean.gbs.api.Repository
 import net.dean.gbs.api.Dependency
 import net.dean.gbs.api.Scope
 import net.dean.gbs.api.Exporter
-import net.dean.gbs.api.ProjectRenderer
 import net.dean.gbs.api.Project
 import org.junit.Test as test
 import org.junit.Assert
 
 public class CreationTest {
     private val processLogger = ProcessOutputAdapter()
+    private val exporter = Exporter()
 
     public test fun basicCreate() {
         val (proj, path) = newProject("basic")
@@ -35,7 +35,8 @@ public class CreationTest {
         proj.build.plugins.add("application")
 
         // Render and export the project
-        Exporter().export(proj, path, ProjectRenderer().render(proj))
+        exporter.export(proj, path)
+        testZip(proj, path)
         validateGradleBuild(path)
     }
 
@@ -63,11 +64,22 @@ public class CreationTest {
      * "com.example.$name" and its base path will be "build/projects/$name
      */
     private fun newProject(name: String): Pair<Project, Path> {
-        val path = Paths.get("build/projects/$name")
+        val path = Paths.get("api/build/projects/normal/$name")
         val proj = Project(name, "com.example.$name")
         // Delete the files before generating it so that if we want to examine the crated files after creation, we can.
         delete(path)
         return proj to path
+    }
+
+    private fun testZip(proj: Project, basePath: Path) {
+        val zipFile = Exporter.relativePath(basePath, "../../zipped/${proj.name}.zip")
+        // Clean up from last time
+        delete(zipFile)
+
+        // Make sure the directories exist first
+        Files.createDirectories(zipFile.getParent())
+        exporter.zip(basePath, zipFile)
+        assert(Files.isRegularFile(zipFile), "Output file does not exist")
     }
 
     private fun delete(path: Path) {
