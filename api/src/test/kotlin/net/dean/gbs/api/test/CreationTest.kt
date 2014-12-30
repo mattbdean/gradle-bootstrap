@@ -3,25 +3,26 @@ package net.dean.gbs.api.test
 import java.nio.file.Paths
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.SimpleFileVisitor
-import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.FileVisitResult
-import java.io.IOException
-import net.dean.gbs.api.License
-import net.dean.gbs.api.Language
-import net.dean.gbs.api.LoggingFramework
-import net.dean.gbs.api.TestingFramework
-import net.dean.gbs.api.Repository
-import net.dean.gbs.api.Dependency
-import net.dean.gbs.api.Scope
-import net.dean.gbs.api.Exporter
-import net.dean.gbs.api.Project
 import org.junit.Test as test
 import org.junit.Assert
+import kotlin.properties.Delegates
+import net.dean.gbs.api.io.ProjectRenderer
+import net.dean.gbs.api.models.License
+import net.dean.gbs.api.models.Language
+import net.dean.gbs.api.models.LoggingFramework
+import net.dean.gbs.api.models.TestingFramework
+import net.dean.gbs.api.models.Repository
+import net.dean.gbs.api.models.Dependency
+import net.dean.gbs.api.models.Scope
+import net.dean.gbs.api.models.Project
+import net.dean.gbs.api.io.RenderReport
+import net.dean.gbs.api.io.delete
+import net.dean.gbs.api.io.relativePath
+import net.dean.gbs.api.io.ZipHelper
 
 public class CreationTest {
     private val processLogger = ProcessOutputAdapter()
-    private val exporter = Exporter()
+    private var renderer: ProjectRenderer by Delegates.notNull()
 
     public test fun basicCreate() {
         val (proj, path) = newProject("basic")
@@ -33,11 +34,17 @@ public class CreationTest {
         // Random plugin
         proj.build.addGradlePlugin(Dependency("net.swisstech", "gradle-dropwizard", scope = Scope.CLASSPATH))
         proj.build.plugins.add("application")
+        validateProject(proj, path)
+    }
 
-        // Render and export the project
-        exporter.export(proj, path)
-        testZip(proj, path)
-        validateGradleBuild(path)
+    /**
+     * Runs a full suite of validation tests, including validating the report from ProjectRenderer.render(), creating a
+     * zip archive of the directory structure, and making sure a 'gradle build' succeeds for the given project
+     */
+    private fun validateProject(proj: Project, root: Path) {
+        validateProjetExportReport(ProjectRenderer(root).render(proj))
+        testZip(proj, root)
+        validateGradleBuild(root)
     }
 
     /**
@@ -46,17 +53,27 @@ public class CreationTest {
     private fun validateGradleBuild(rootPath: Path) {
         val command = array("gradle", "build")
         val dir = rootPath.toFile()
-        println("Executing command '${command.join(" ")}' in directory '${dir.getAbsolutePath()}'")
         val process = ProcessBuilder()
                 .directory(dir)
                 .command(*command)
                 .start()
-        // Should have an exit value of 0
-
         processLogger.attach(process, rootPath.getFileName().toString())
+
         val exitCode = process.waitFor()
-        println("Finished")
+        // An exit code of 0 means the process completed without error
         Assert.assertEquals(0, exitCode)
+    }
+
+    /**
+     * Makes sure every directory and file in the report exist and are either a directory or a file respectively
+     */
+    fun validateProjetExportReport(report: RenderReport) {
+        for (dir in report.directories) {
+            assert(Files.isDirectory(dir), "Path $dir claimed to be a directory but was not")
+        }
+        for (file in report.files) {
+            assert(Files.isRegularFile(file), "Path $file claimed to be a file but was not")
+        }
     }
 
     /**
@@ -71,36 +88,17 @@ public class CreationTest {
         return proj to path
     }
 
+    /**
+     * Makes sure that a zip file is created for the given project in the given path
+     */
     private fun testZip(proj: Project, basePath: Path) {
-        val zipFile = Exporter.relativePath(basePath, "../../zipped/${proj.name}.zip")
+        val zipFile = relativePath(basePath, "../../zipped/${proj.name}.zip")
         // Clean up from last time
         delete(zipFile)
 
         // Make sure the directories exist first
         Files.createDirectories(zipFile.getParent())
-        exporter.zip(basePath, zipFile)
+        ZipHelper.createZip(basePath, zipFile)
         assert(Files.isRegularFile(zipFile), "Output file does not exist")
-    }
-
-    private fun delete(path: Path) {
-        if (!Files.exists(path))
-            return
-        if (Files.isDirectory(path)) {
-            // Recursively delete file tree
-            Files.walkFileTree(path, object: SimpleFileVisitor<Path>() {
-                override fun visitFile(file: Path?, attrs: BasicFileAttributes): FileVisitResult {
-                    Files.delete(file)
-                    return FileVisitResult.CONTINUE
-                }
-
-                override fun postVisitDirectory(dir: Path?, exc: IOException?): FileVisitResult {
-                    Files.delete(dir)
-                    return FileVisitResult.CONTINUE
-                }
-            })
-        } else {
-            // Delete file
-            Files.delete(path)
-        }
     }
 }

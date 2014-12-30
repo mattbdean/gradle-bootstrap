@@ -1,4 +1,4 @@
-package net.dean.gbs.api
+package net.dean.gbs.api.models
 
 import java.util.HashSet
 import java.util.HashMap

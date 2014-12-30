@@ -1,4 +1,4 @@
-package net.dean.gbs.api
+package net.dean.gbs.api.models
 
 public trait ModularComponent {
     public fun configureOnto(project: Project)

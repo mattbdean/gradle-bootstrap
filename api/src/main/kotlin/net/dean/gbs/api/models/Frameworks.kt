@@ -1,4 +1,4 @@
-package net.dean.gbs.api
+package net.dean.gbs.api.models
 
 /**
  * Supported testing frameworks
@@ -9,7 +9,6 @@ public enum class TestingFramework : Framework {
     }
     // Not a typo, name is "TestNG"
     TESTNG {
-        // TODO: configureOnto() adds useTestNG() to test closure
         override val deps = array(Dependency("org.testing", "testng", scope = Scope.TEST_COMPILE))
     }
     JUNIT {

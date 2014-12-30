@@ -1,11 +1,11 @@
 package net.dean.gbs.web.models;
 
 import io.dropwizard.jackson.JsonSnakeCase;
-import net.dean.gbs.api.Language;
-import net.dean.gbs.api.License;
-import net.dean.gbs.api.LoggingFramework;
-import net.dean.gbs.api.Project;
-import net.dean.gbs.api.TestingFramework;
+import net.dean.gbs.api.models.Language;
+import net.dean.gbs.api.models.License;
+import net.dean.gbs.api.models.LoggingFramework;
+import net.dean.gbs.api.models.Project;
+import net.dean.gbs.api.models.TestingFramework;
 
 import java.util.Date;
 import java.util.Set;

@@ -3,9 +3,9 @@ package net.dean.gbs.web.db
 import java.sql.ResultSet
 import org.skife.jdbi.v2.StatementContext
 import java.util.Date
-import net.dean.gbs.api.Language
-import net.dean.gbs.api.TestingFramework
-import net.dean.gbs.api.LoggingFramework
+import net.dean.gbs.api.models.Language
+import net.dean.gbs.api.models.TestingFramework
+import net.dean.gbs.api.models.LoggingFramework
 import org.skife.jdbi.v2.sqlobject.Binder
 import org.skife.jdbi.v2.SQLStatement
 import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper
@@ -13,8 +13,8 @@ import org.skife.jdbi.v2.sqlobject.SqlUpdate
 import org.skife.jdbi.v2.sqlobject.SqlQuery
 import org.skife.jdbi.v2.sqlobject.Bind
 import org.skife.jdbi.v2.tweak.ResultSetMapper
-import net.dean.gbs.api.Project
-import net.dean.gbs.api.License
+import net.dean.gbs.api.models.Project
+import net.dean.gbs.api.models.License
 import org.skife.jdbi.v2.sqlobject.BinderFactory
 import java.util.UUID
 import net.dean.gbs.web.models.ProjectModel

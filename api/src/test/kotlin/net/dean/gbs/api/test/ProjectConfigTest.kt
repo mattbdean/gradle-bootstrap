@@ -1,11 +1,11 @@
 package net.dean.gbs.api.test
 
 import org.junit.Test as test
-import net.dean.gbs.api.Language
-import net.dean.gbs.api.LoggingFramework
-import net.dean.gbs.api.Dependency
-import net.dean.gbs.api.Scope
-import net.dean.gbs.api.Project
+import net.dean.gbs.api.models.Language
+import net.dean.gbs.api.models.LoggingFramework
+import net.dean.gbs.api.models.Dependency
+import net.dean.gbs.api.models.Scope
+import net.dean.gbs.api.models.Project
 
 public class ProjectConfigTest {
     public test fun testAddLang() {

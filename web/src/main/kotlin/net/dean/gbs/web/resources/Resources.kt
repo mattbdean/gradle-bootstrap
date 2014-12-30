@@ -7,12 +7,12 @@ import javax.ws.rs.GET
 import javax.ws.rs.POST
 import javax.ws.rs.Consumes
 import javax.ws.rs.PathParam
-import net.dean.gbs.api.TestingFramework
-import net.dean.gbs.api.LoggingFramework
-import net.dean.gbs.api.Language
-import net.dean.gbs.api.License
+import net.dean.gbs.api.models.TestingFramework
+import net.dean.gbs.api.models.LoggingFramework
+import net.dean.gbs.api.models.Language
+import net.dean.gbs.api.models.License
 import javax.ws.rs.FormParam
-import net.dean.gbs.api.Project
+import net.dean.gbs.api.models.Project
 import java.util.UUID
 import java.util.Date
 import net.dean.gbs.web.db.ProjectDao

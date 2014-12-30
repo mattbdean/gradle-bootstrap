@@ -1,10 +1,7 @@
-package net.dean.gbs.api
+package net.dean.gbs.api.io
 
 import java.nio.file.Path
 import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.charset.StandardCharsets
-import java.nio.charset.Charset
 import java.nio.file.FileAlreadyExistsException
 import java.io.FileNotFoundException
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
@@ -15,40 +12,14 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import java.io.FileInputStream
 import org.apache.commons.compress.utils.IOUtils
 
-public class Exporter(public val charset: Charset = StandardCharsets.UTF_8) {
-    class object {
-        private val renderer = ProjectRenderer()
-
-        public fun relativePath(base: Path, other: String, vararg others: String): Path {
-            return Paths.get(base.normalize().toString(), other, *others).normalize()
-        }
-    }
-
+/**
+ * A singleton class to help with the creation of zip archives. Adapted from
+ * http://developer-tips.hubpages.com/hub/Zipping-and-Unzipping-Nested-Directories-in-Java-using-Apache-Commons-Compress
+ */
+public object ZipHelper {
     /**
-     * Renders and writes a Project into the given base path.
+     * Creates a zip file. The input directory must be an existing directory and the output file must not exist.
      */
-    public fun export(project: Project, base: Path) {
-        val files = renderer.render(project)
-
-        Files.createDirectories(base)
-        for (path in project.directoriesToCreate) {
-            Files.createDirectories(relativePath(base, path))
-        }
-
-        for ((fileName, contents) in files) {
-            Files.write(relativePath(base, fileName), contents, charset)
-        }
-    }
-
-    /**
-     * Creates a zip archive. [root] must be an existing directory, and [out] must not exist.
-     */
-    public fun zip(root: Path, out: Path) {
-        ZipHelper.createZip(root, out)
-    }
-}
-
-private object ZipHelper {
     public fun createZip(inputDir: Path, outputFile: Path) {
         // Assert that the output file does not already exist
         if (Files.exists(outputFile)) throw FileAlreadyExistsException(outputFile.toString())
