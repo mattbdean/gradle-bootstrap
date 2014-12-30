@@ -1,9 +1,9 @@
 package net.dean.gbs.test;
 
-import net.dean.gbs.api.Language;
-import net.dean.gbs.api.License;
-import net.dean.gbs.api.LoggingFramework;
-import net.dean.gbs.api.TestingFramework;
+import net.dean.gbs.api.models.Language;
+import net.dean.gbs.api.models.License;
+import net.dean.gbs.api.models.LoggingFramework;
+import net.dean.gbs.api.models.TestingFramework;
 import net.dean.gbs.web.db.ProjectDao;
 import net.dean.gbs.web.models.ProjectModel;
 import net.dean.gbs.web.resources.ProjectBulkLookupResource;

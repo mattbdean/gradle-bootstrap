@@ -1,14 +1,14 @@
 package net.dean.gbs.test
 
-import net.dean.gbs.api.Project
+import net.dean.gbs.api.models.Project
 import net.dean.gbs.web.models.ProjectModel
 import org.joda.time.DateTimeZone
 import org.joda.time.DateTime
 import java.util.UUID
-import net.dean.gbs.api.TestingFramework
-import net.dean.gbs.api.LoggingFramework
-import net.dean.gbs.api.License
-import net.dean.gbs.api.Language
+import net.dean.gbs.api.models.TestingFramework
+import net.dean.gbs.api.models.LoggingFramework
+import net.dean.gbs.api.models.License
+import net.dean.gbs.api.models.Language
 import kotlin.platform.platformStatic
 import javax.ws.rs.core.MultivaluedMap
 import com.sun.jersey.core.util.MultivaluedMapImpl
