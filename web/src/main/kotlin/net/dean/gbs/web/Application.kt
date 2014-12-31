@@ -21,6 +21,15 @@ import java.util.Date
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import java.nio.file.Paths
+import javax.ws.rs.ext.ExceptionMapper
+import org.slf4j.LoggerFactory
+import org.slf4j.Logger
+import javax.ws.rs.core.Response
+import javax.ws.rs.ext.Provider as provider
+import javax.ws.rs.WebApplicationException
+import javax.ws.rs.core.Context as context
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpUtils
 
 public class GradleBootstrap : Application<GradleBootstrapConf>() {
     class object {
@@ -65,6 +74,22 @@ public class GradleBootstrapConf : Configuration() {
         }
 
         platformStatic fun getCurrentDate(): Date = DateTime(DateTimeZone.UTC).toDate()
+    }
+}
+
+public provider class UnhandledExceptionLogger : ExceptionMapper<Throwable> {
+    private val log: Logger = LoggerFactory.getLogger(javaClass)
+    public context var request: HttpServletRequest? = null
+
+    override fun toResponse(t: Throwable?): Response? {
+        if (t is WebApplicationException) {
+            // These will be shown to the user, don't mess with this
+            return t.getResponse()
+        }
+
+        log.error("Unhandled exception", t)
+        log.error("URL: ${HttpUtils.getRequestURL(request)}")
+        return Response.status(500).build()
     }
 }
 

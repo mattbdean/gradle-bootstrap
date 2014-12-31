@@ -8,6 +8,9 @@ import net.dean.gbs.api.models.DependencyContext
 import java.nio.file.Paths
 import net.dean.gbs.api.models.GradleBuild
 import net.dean.gbs.api.models.TestingFramework
+import net.dean.gbs.api.models.License
+import java.util.HashMap
+import java.nio.charset.StandardCharsets
 
 /** Represents the files and directories created by a FileSetRenderer */
 public data class RenderReport(public val files: List<Path>, public val directories: List<Path>)
@@ -99,14 +102,17 @@ public class ProjectRenderer(private val basePath: Path) : FileSetRenderer<Proje
         gen.statement("rootProject.name = '${obj.name}'")
         gen.close()
 
-        ///// LICENSE /////
-        val licenseSource = Paths.get(javaClass<ProjectRenderer>().getResource("/licenses/${obj.license}.txt").toURI())
-        val licenseDest = relativePath(basePath, "LICENSE")
-        Files.copy(licenseSource, licenseDest)
-
         val fileWrites: MutableList<Path> = ArrayList()
+
+        ///// LICENSE /////
+        if (obj.license != License.NONE) {
+            val licenseSource = Paths.get(javaClass<ProjectRenderer>().getResource("/licenses/${obj.license}.txt").toURI())
+            val licenseDest = relativePath(basePath, "LICENSE")
+            Files.copy(licenseSource, licenseDest)
+            fileWrites.add(licenseDest)
+        }
+
         fileWrites.addAll(gen.history)
-        fileWrites.add(licenseDest)
 
         return RenderReport(fileWrites, directoryCreations)
     }

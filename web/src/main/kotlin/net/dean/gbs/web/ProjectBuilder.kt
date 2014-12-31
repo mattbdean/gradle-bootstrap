@@ -44,6 +44,7 @@ public class ProjectBuilder(private val dao: ProjectDao, private val storageFold
                 val projectPath = getUnzippedPath(model)
                 try {
                     val renderer = ProjectRenderer(projectPath)
+                    Files.createDirectories(projectPath)
                     val project = toProject(model)
                     renderer.render(project)
                     val zipPath = getZipPath(model)
@@ -52,7 +53,7 @@ public class ProjectBuilder(private val dao: ProjectDao, private val storageFold
                     update(BuildStatus.READY)
                 } catch (ex: Exception) {
                     update(BuildStatus.ERRORED)
-                    log.error("Build errored: $ex")
+                    log.error("Build errored", ex)
                 } finally {
                     delete(projectPath)
                 }
@@ -76,14 +77,19 @@ public class ProjectBuilder(private val dao: ProjectDao, private val storageFold
         }
     }
 
+    /** Returns the name of the immediate subdirectory of [storageFolder] where files for this project will be placed. */
     private fun getBaseName(project: ProjectModel): String = project.getId().toString()
+    /** Returns the directory in which the project's file structure will be created */
     private fun getUnzippedPath(project: ProjectModel): Path =
-            relativePath(storageFolder, getBaseName(project))
+            relativePath(storageFolder, getBaseName(project), filterFilename(project.getName()))
+    /** Returns the location of a project's zip file */
     private fun getZipPath(project: ProjectModel): Path =
             relativePath(storageFolder, getBaseName(project), filterFilename(project.getName()) + ".zip")
+    /** Replaces all characters except characters A-Z (case insensitive), 0-9, periods, and hyphens */
     private fun filterFilename(name: String): String = name.replaceAll("[^a-zA-Z0-9.-]", "_");
 
-    public fun toProject(model: ProjectModel): Project {
+    /** Creates a Project out of the given ProjectModel */
+    private fun toProject(model: ProjectModel): Project {
         val proj = Project(model.getName()!!, model.getGroup()!!, model.getVersion()!!)
         if (model.getTestingFramework() != null) proj.build.testing = TestingFramework.valueOf(model.getTestingFramework()!!.toUpperCase())
         if (model.getLoggingFramework() != null) proj.build.logging = LoggingFramework.valueOf(model.getLoggingFramework()!!.toUpperCase())
