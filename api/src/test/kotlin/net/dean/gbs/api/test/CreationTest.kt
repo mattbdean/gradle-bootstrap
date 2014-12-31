@@ -11,47 +11,74 @@ import net.dean.gbs.api.models.License
 import net.dean.gbs.api.models.Language
 import net.dean.gbs.api.models.LoggingFramework
 import net.dean.gbs.api.models.TestingFramework
-import net.dean.gbs.api.models.Repository
-import net.dean.gbs.api.models.Dependency
-import net.dean.gbs.api.models.Scope
 import net.dean.gbs.api.models.Project
 import net.dean.gbs.api.io.RenderReport
 import net.dean.gbs.api.io.delete
 import net.dean.gbs.api.io.relativePath
 import net.dean.gbs.api.io.ZipHelper
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 public class CreationTest {
     private val processLogger = ProcessOutputAdapter()
     private var renderer: ProjectRenderer by Delegates.notNull()
+    private val log: Logger = LoggerFactory.getLogger(javaClass)
 
-    public test fun basicCreate() {
-        val (proj, path) = newProject("basic")
-        proj.license = License.APACHE
-        proj.add(Language.JAVA)
-        proj.build.logging = LoggingFramework.SLF4J
-        proj.build.testing = TestingFramework.TESTNG
-        proj.build.projectContext.add(Repository.MAVEN_CENTRAL)
-        // Random plugin
-        proj.build.addGradlePlugin(Dependency("net.swisstech", "gradle-dropwizard", scope = Scope.CLASSPATH))
-        proj.build.plugins.add("application")
-        validateProject(proj, path)
+    public test fun testSignificantPermutations() {
+        // License: NONE vs <any other>
+        val licenseOptions = array(License.NONE, License.GPL2)
+        // Testing framework: NONE vs TESTNG vs <any other>
+        // TestNG tests require a useTestNG() call in the buildscript, while the others don't
+        val testingOptions = array(TestingFramework.NONE, TestingFramework.TESTNG, TestingFramework.JUNIT)
+        // Logging framework: NONE vs <SLF4J or LOG4J> vs <any other>
+        // SLF4J and Log4J both require multiple dependencies, while the others don't
+        val loggingOptions = array(LoggingFramework.NONE, LoggingFramework.LOGBACK_CLASSIC, LoggingFramework.APACHE_COMMONS)
+        // Languages: <none> vs <any other> vs KOTLIN
+        // Kotlin requires a custom meta-dependency (plugin) and a compile-time dependency, while the others require
+        // a built-in plugin and a single compile-time dependency
+        val languageOptions = array(Language.GROOVY, Language.KOTLIN)
+        val projectAmount = licenseOptions.size() * testingOptions.size() * loggingOptions.size() * languageOptions.size()
+        log.info("Testing $projectAmount unique projects")
+
+        var counter = 0
+        for (license in licenseOptions)
+            for (testing in testingOptions)
+                for (logging in loggingOptions)
+                    for (lang in languageOptions) {
+                        val id = "$license-$testing-$logging-$lang"
+                        log.info("Evaluating project #${++counter}: (license=$license,testing=$testing,logging=$logging," +
+                                "lang=$lang)")
+                        val (proj, path) = newProject("permutation-$counter-$id", lang = lang)
+                        proj.license = license
+                        proj.build.testing = testing
+                        proj.build.logging = logging
+                        validateProject(proj, path)
+                    }
     }
 
     /**
      * Runs a full suite of validation tests, including validating the report from ProjectRenderer.render(), creating a
      * zip archive of the directory structure, and making sure a 'gradle build' succeeds for the given project
      */
-    private fun validateProject(proj: Project, root: Path) {
+    private fun validateProject(proj: Project, root: Path, zip: Boolean = false) {
         validateProjetExportReport(ProjectRenderer(root).render(proj))
-        testZip(proj, root)
-        validateGradleBuild(root)
+        // Testing zip functionality is only required for one project. Testing multiple will only serve to make the test longer
+        if (zip)
+            testZip(proj, root)
+        validateGradleBuild(proj, root)
     }
 
     /**
      * Executes "gradle build" in a given directory and asserts that the exit code of that process is equal to 0.
      */
-    private fun validateGradleBuild(rootPath: Path) {
-        val command = array("gradle", "build")
+    private fun validateGradleBuild(proj: Project, rootPath: Path) {
+        val task = if (proj.languages.size() == 0) {
+            // No 'build' task unless there are languages applied, use "tasks" since it still checks syntax
+            "tasks"
+        } else "build"
+        val command = array("gradle", task)
         val dir = rootPath.toFile()
         val process = ProcessBuilder()
                 .directory(dir)
@@ -80,9 +107,9 @@ public class CreationTest {
      * Returns a Pair of a Project to its root Pat based on the calling method. The group will be
      * "com.example.$name" and its base path will be "build/projects/$name
      */
-    private fun newProject(name: String): Pair<Project, Path> {
+    private fun newProject(name: String, lang: Language): Pair<Project, Path> {
         val path = Paths.get("api/build/projects/normal/$name")
-        val proj = Project(name, "com.example.$name")
+        val proj = Project(name, "com.example.$name", lang = lang)
         // Delete the files before generating it so that if we want to examine the crated files after creation, we can.
         delete(path)
         return proj to path

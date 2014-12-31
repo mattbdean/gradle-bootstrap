@@ -2,38 +2,35 @@ package net.dean.gbs.api.models
 
 import java.util.HashSet
 import java.util.HashMap
+import java.util.EnumSet
 
 /**
  * Represents a Gradle project
  */
-public class Project(val name: String, val group: String, val version: String = "0.0.1") {
+public class Project(val name: String, val group: String, val version: String = "0.0.1", lang: Language, vararg otherLangs: Language) {
     /** Set of directories to create */
     public val directoriesToCreate: MutableSet<String> = HashSet()
     public var license: License = License.NONE
-
-    private val internalLanguages: MutableSet<Language> = HashSet()
-    public val languages: Set<Language>
-        get() = internalLanguages
 
     private val internalRawFileWrites: MutableMap<String, String> = HashMap()
     public val rawFileWrites: Map<String, String>
         get() = internalRawFileWrites
 
     /** Represents the conceptual build.gradle file for this project */
-    public val build: GradleBuild = GradleBuild()
+    public val build: GradleBuild = GradleBuild();
+    public val languages: Set<Language>
 
-    /**
-     * Adds a language to be used in this project
-     */
-    public fun add(lang: Language) {
-        internalLanguages.add(lang)
-        val name = lang.name().toLowerCase()
-        val packageFolders = group.replace('.', '/')
-        for (sourceSet in array("main", "test")) {
-            // Example: src/main/java/com/example/app
-            directoriesToCreate.add("src/$sourceSet/$name/$packageFolders")
+    {
+        languages = EnumSet.of(lang, *otherLangs)
+        for (l in languages) {
+            val name = l.name().toLowerCase()
+            val packageFolders = group.replace('.', '/')
+            for (sourceSet in array("main", "test")) {
+                // Example: src/main/java/com/example/app
+                directoriesToCreate.add("src/$sourceSet/$name/$packageFolders")
+            }
+            l.configureOnto(build)
         }
-        lang.configureOnto(build)
     }
 
     public fun enqueueRawFileWrite(file: String, text: String) {
@@ -45,11 +42,13 @@ public class Project(val name: String, val group: String, val version: String = 
  * A collection of languages that will be used in this project
  */
 public enum class Language : ModularGradleComponent {
-    JAVA
-    GROOVY
-    SCALA
+    JAVA {   override val dep: Dependency? = null }
+    GROOVY { override val dep: Dependency? = Dependency("org.codehaus.groovy", "grovy-all") }
+    SCALA {  override val dep: Dependency? = Dependency("org.scala-lang", "scala-library") }
     KOTLIN {
-        public override fun configureOnto(build: GradleBuild) {
+        override val dep: Dependency? = null
+
+        override fun configureOnto(build: GradleBuild) {
             // See http://kotlinlang.org/docs/reference/using-gradle.html#configuring-dependencies
             build.metaContext.add(Repository.MAVEN_CENTRAL)
             build.metaContext.add(Dependency("org.jetbrains.kotlin", "kotlin-gradle-plugin", scope = Scope.CLASSPATH))
@@ -60,8 +59,11 @@ public enum class Language : ModularGradleComponent {
         }
     }
 
+    public abstract val dep: Dependency?
     public override fun configureOnto(build: GradleBuild) {
         build.plugins.add(name().toLowerCase())
+        if (dep != null)
+            build.projectContext.add(dep!!)
     }
 }
 

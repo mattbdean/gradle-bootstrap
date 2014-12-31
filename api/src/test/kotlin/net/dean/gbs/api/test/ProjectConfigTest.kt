@@ -9,14 +9,17 @@ import net.dean.gbs.api.models.Project
 
 public class ProjectConfigTest {
     public test fun testAddLang() {
-        val proj = newProject()
-        proj.add(Language.JAVA)
-        assert("src/main/java/com/example/app" in proj.directoriesToCreate)
-        assert("src/test/java/com/example/app" in proj.directoriesToCreate)
+        val proj = newProject(*Language.values())
+        for (lang in Language.values()) {
+            assert("src/main/${lang.name().toLowerCase()}/com/example/app" in proj.directoriesToCreate,
+                    "Did not find main source set for $lang")
+            assert("src/test/${lang.name().toLowerCase()}/com/example/app" in proj.directoriesToCreate,
+                    "Did not find test source set for $lang")
+        }
     }
 
     public test fun testAddFrameworks() {
-        val proj = newProject()
+        val proj = newProject(Language.JAVA)
         proj.build.logging = LoggingFramework.SLF4J
         assert(proj.build.projectContext.deps.filter { it.name == "slf4j-api" && it.group == "org.slf4j" }.size() > 0)
 
@@ -36,5 +39,12 @@ public class ProjectConfigTest {
         assert(dep2.gradleFormat() == "testRuntime 'com.mydep:mydep:1.0.0'")
     }
 
-    private fun newProject(): Project = Project("test proj", "com.example.app")
+    private fun newProject(vararg langs: Language): Project {
+        if (langs.isEmpty())
+            throw IllegalArgumentException("Must have more than one language")
+
+        val firstLang = langs[0]
+        val otherLangs = langs.copyOfRange(1, langs.size())
+        return Project("test-proj", "com.example.app", lang = firstLang, otherLangs = *otherLangs)
+    }
 }

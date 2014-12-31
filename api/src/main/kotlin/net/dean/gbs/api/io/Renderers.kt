@@ -187,7 +187,7 @@ public class WrapperTaskRenderer : CodeBlockRenderer<Project> {
     override val name: String = "task wrapper(type: Wrapper)"
 
     override fun renderBlock(obj: Project, gen: CodeGenerator) {
-        gen.statement("gradleVersion = '${GradleBuild.LATEST_GRADLE_VERSION}'")
+        gen.statement("gradleVersion = '${GradleBuild.GRADLE_WRAPPER_VERSION}'")
     }
 }
 

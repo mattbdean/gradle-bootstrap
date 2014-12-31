@@ -7,7 +7,7 @@ import java.util.HashSet
  */
 public class GradleBuild {
     class object {
-        public val LATEST_GRADLE_VERSION: String = "2.2.1"
+        public val GRADLE_WRAPPER_VERSION: String = "2.2.1"
     }
     /** Dependencies and repositories for the Gradle buildscript */
     public val metaContext: DependencyContext = DependencyContext()
@@ -120,11 +120,15 @@ public class DependencyContext {
         for (d in internalDeps) {
             if (d.group.equalsIgnoreCase(dep.group) && d.name.equalsIgnoreCase(dep.name)) {
                 // Only add unique dependencies
-                break
+                return
             }
         }
 
         internalDeps.add(dep)
+        if (internalDeps.size() > 0 && internalRepos.size() == 0) {
+            // Make sure we can resolve our dependencies
+            internalRepos.add(Repository.MAVEN_CENTRAL)
+        }
     }
 
     public fun add(dep: Dependency, vararg others: Dependency) {

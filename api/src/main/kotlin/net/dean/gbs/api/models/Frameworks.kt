@@ -17,13 +17,14 @@ public enum class TestingFramework : Framework {
 }
 
 public enum class LoggingFramework : Framework {
-    /** No logging (could be java.util.logging) */
+    /** No logging (possibly java.util.logging) */
     NONE {
         override val deps = array<Dependency>()
     }
 
     SLF4J {
-        override val deps = array(Dependency("org.slf4j", "slf4j-api"), Dependency("org.slf4j", "slf4j-simple"))
+        private val group = "org.slf4j"
+        override val deps = array(Dependency(group, "slf4j-api"), Dependency(group, "slf4j-simple"))
     }
 
     LOG4J {
