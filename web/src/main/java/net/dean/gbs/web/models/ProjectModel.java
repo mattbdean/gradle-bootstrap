@@ -28,13 +28,15 @@ public final class ProjectModel implements Model<Project> {
     protected String loggingFramework;
     protected String license;
     protected Set<Language> languages;
+    protected String status;
 
     public ProjectModel() {
         // JSON serialization
     }
 
     public ProjectModel(UUID id, Date createdAt, Date updatedAt, String name, String group, String version,
-                        TestingFramework testingFramework, LoggingFramework loggingFramework, License license, Set<Language> languages) {
+                        TestingFramework testingFramework, LoggingFramework loggingFramework, License license,
+                        Set<Language> languages, BuildStatus status) {
         this.id = id;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -44,10 +46,11 @@ public final class ProjectModel implements Model<Project> {
         setTestingFramework(testingFramework);
         setLoggingFramework(loggingFramework);
         setLicense(license);
+        setStatus(status);
         this.languages = languages;
     }
 
-    public static ProjectModel fromProject(Project project, UUID id, Date createdAt, Date updatedAt) {
+    public static ProjectModel fromProject(Project project, UUID id, Date createdAt, Date updatedAt, BuildStatus status) {
         return new ProjectModel(id,
                 createdAt,
                 updatedAt,
@@ -57,7 +60,8 @@ public final class ProjectModel implements Model<Project> {
                 project.getBuild().getTesting(),
                 project.getBuild().getLogging(),
                 project.getLicense(),
-                project.getLanguages());
+                project.getLanguages(),
+                status);
     }
 
     public UUID getId() {
@@ -100,6 +104,10 @@ public final class ProjectModel implements Model<Project> {
         return languages;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
     public void setId(UUID id) {
         this.id = id;
     }
@@ -138,6 +146,10 @@ public final class ProjectModel implements Model<Project> {
 
     public void setLanguages(Set<Language> languages) {
         this.languages = languages;
+    }
+
+    public void setStatus(BuildStatus status) {
+        this.status = status.name().toLowerCase();
     }
 
     @Override

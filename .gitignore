@@ -10,7 +10,5 @@ build/
 hs_err_pid*
 
 # Project based
-test-downloads/
-src/test/resources/secrets.json
 todo.txt
 

@@ -21,8 +21,18 @@ import net.dean.gbs.web.Parameter
 import net.dean.gbs.web.ParamLocation
 import net.dean.gbs.web.models.ProjectModel
 import net.dean.gbs.web.GradleBootstrapConf
+import net.dean.gbs.web.models.BuildStatus
+import com.codahale.metrics.annotation.Timed
+import net.dean.gbs.web.ProjectBuilder
+import net.dean.gbs.web.db.DataAccessObject
+import net.dean.gbs.web.models.Model
+import javax.ws.rs.core.StreamingOutput
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import javax.ws.rs.core.Context
+import javax.ws.rs.core.UriInfo
 
-public trait Resource {
+public trait Resource<M : Model<*>> {
     /**
      * Throws the given lazy-evaluated RequestException when [test] is true
      */
@@ -33,15 +43,15 @@ public trait Resource {
     /**
      * Throws a MissingRequiredParamException when the given parameter is null or it is a String and is emtpy
      */
-    public fun assertPresent(param: Parameter) {
+    public fun assertPresent(param: Parameter<*>) {
         throwWhenTrue(param.value == null || (param.value is String && (param.value as String).isEmpty()),
-                { MissingRequiredParamException(javaClass, param) })
+                { MissingRequiredParamException(param) })
     }
 
     /**
      * Calls [assertPresent] on multiple Parameters
      */
-    public fun assertPresent(param: Parameter, vararg others: Parameter) {
+    public fun assertPresent(param: Parameter<*>, vararg others: Parameter<*>) {
         // Test the first parameter
         assertPresent(param)
 
@@ -55,23 +65,16 @@ public trait Resource {
      *
      * canBeNull: If true, then this method will [assertPresent] on the given parameter
      */
-    public fun assertStringIsEnumValue<T : Enum<T>>(param: Parameter, allValues: Array<T>, canBeNull: Boolean = false) {
-        if (!canBeNull && param.value == null)
-            assertPresent(param)
-
-        // Make sure the parameter's value was actually a string
-        if (param.value !is String)
-            throw IllegalArgumentException("Parameter value is not java.lang.String (was ${param.value!!.javaClass.getName()})")
-
+    public fun assertStringIsEnumValue<T : Enum<T>>(param: Parameter<String>, allValues: Array<T>) {
         for (enumValue in allValues) {
-            if ((param.value!! as String).equalsIgnoreCase(enumValue.name())) {
+            if ((param.value).equalsIgnoreCase(enumValue.name())) {
                 return
             }
         }
 
-        throw InvalidParamException(resourceClass = javaClass<ProjectOptionsResource>(),
-                why = "One of ${allValues.map { it.name().toLowerCase() }.toString()} (case insensitive) was not provided",
-                param = param
+        throw InvalidParamException(why = "One of ${allValues.map { it.name().toLowerCase() }.toString()} (case insensitive) was not provided",
+                param = param,
+                errorId = ErrorCode.NOT_ENUM_VALUE
         )
     }
 
@@ -84,11 +87,11 @@ public trait Resource {
      *
      * Returns a valid java.util.UUID if and only if all of the above is true.
      */
-    public fun assertValidUuid(param: Parameter): UUID {
+    public fun assertValidUuid(param: Parameter<String>): UUID {
         assertPresent(param)
 
-        val uuid = if (param.value is String) param.value!! as String else throw IllegalArgumentException("param.value must be a String")
-        val initException = { InvalidParamException(javaClass, "Invalid ID", param) }
+        val uuid = param.value
+        val initException = { InvalidParamException("No resource could be found by that ID", ErrorCode.MALFORMED_UUID, param) }
 
         try {
             // http://stackoverflow.com/a/10693997/1275092
@@ -108,20 +111,32 @@ public trait Resource {
     public fun alternative<T>(param: T, alt: T): T = param ?: alt
 }
 
-/**
- * Provides an abstraction for resources that interact with a ProjectDao
- */
-public abstract class ProjectResource(protected val dao: ProjectDao) : Resource
 
 /** Provides an endpoint to create a project */
 Path("/project")
 Produces(MediaType.APPLICATION_JSON)
 Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-public class ProjectCreationResource(dao: ProjectDao) : ProjectResource(dao) {
+public class ProjectResource(private val dao: ProjectDao, private val builder: ProjectBuilder) : Resource<ProjectModel> {
+    private val log: Logger = LoggerFactory.getLogger(javaClass)
+
+    public fun get(param: Parameter<UUID>, dao: ProjectDao): ProjectModel {
+        val dbLookup = dao.get(param.value)
+        throwWhenTrue(dbLookup == null,
+                { InvalidParamException("No model by that ID", ErrorCode.NOT_FOUND, param) })
+        return dbLookup!!
+    }
     private val defaultVersion = "0.0.1"
     private val defaultTesting = TestingFramework.NONE.name()
     private val defaultLogging = LoggingFramework.NONE.name()
     private val defaultLicense = License.NONE.name()
+    public val options: List<String> = listOf(
+            "license",
+            "language",
+            "framework_testing",
+            "framework_logging"
+    )
+    // calculate this before hand to avoid calling toString() over and over again
+    public val optionsString: String by Delegates.lazy { options.toString() }
 
     /**
      * Creates a new project
@@ -134,7 +149,9 @@ public class ProjectCreationResource(dao: ProjectDao) : ProjectResource(dao) {
      * license: Project's license. Must be one of the values in [License].
      * languages: Comma-separated list of zero or more values in [Language].
      */
-    POST public fun create(FormParam("name") name: String?,
+    Timed
+    POST public fun create(Context uriInfo: UriInfo,
+                           FormParam("name") name: String?,
                            FormParam("group") group: String?,
                            FormParam("version") version: String?,
                            FormParam("testing") testing: String?,
@@ -142,17 +159,17 @@ public class ProjectCreationResource(dao: ProjectDao) : ProjectResource(dao) {
                            FormParam("license") license: String?,
                            FormParam("languages") languages: String?): ProjectModel {
         // name and group are required
-        assertPresent(Parameter("name", name, ParamLocation.BODY),
-                      Parameter("group", group, ParamLocation.BODY))
+        assertPresent(Parameter("name", name, ParamLocation.BODY, uriInfo),
+                      Parameter("group", group, ParamLocation.BODY, uriInfo))
 
         // testing and logging are optional, but they must be one of the values in their respective enums
 
-        if (testing != null) assertStringIsEnumValue(Parameter("testing", testing, ParamLocation.BODY), TestingFramework.values())
-        if (logging != null) assertStringIsEnumValue(Parameter("logging", logging, ParamLocation.BODY), LoggingFramework.values())
-        if (license != null) assertStringIsEnumValue(Parameter("license", license, ParamLocation.BODY), License.values())
+        if (testing != null) assertStringIsEnumValue(Parameter("testing", testing, ParamLocation.BODY, uriInfo), TestingFramework.values())
+        if (logging != null) assertStringIsEnumValue(Parameter("logging", logging, ParamLocation.BODY, uriInfo), LoggingFramework.values())
+        if (license != null) assertStringIsEnumValue(Parameter("license", license, ParamLocation.BODY, uriInfo), License.values())
         if (languages != null) {
             for (lang in languages.split(',')) {
-                assertStringIsEnumValue(Parameter("languages", lang, ParamLocation.BODY), Language.values())
+                assertStringIsEnumValue(Parameter("languages", lang, ParamLocation.BODY, uriInfo), Language.values())
             }
         }
 
@@ -175,54 +192,48 @@ public class ProjectCreationResource(dao: ProjectDao) : ProjectResource(dao) {
         }
 
         val createdAt = GradleBootstrapConf.getCurrentDate()
-        val model = ProjectModel.fromProject(proj, UUID.randomUUID(), createdAt, createdAt)
+        val model = ProjectModel.fromProject(proj, UUID.randomUUID(), createdAt, createdAt, BuildStatus.ENQUEUED)
         dao.insert(model)
+        builder.enqueue(model)
         return model
     }
-}
 
-/**
- * Provides an endpoint to list all projects
- */
-Path("/projects")
-Produces(MediaType.APPLICATION_JSON)
-public class ProjectBulkLookupResource(dao: ProjectDao) : ProjectResource(dao) {
-    GET public fun fetch(): Iterator<ProjectModel> {
+    Path("list")
+    GET public fun getAll(): Iterator<ProjectModel> {
+        // TODO: Pagination
         return dao.getAll()
     }
-}
 
-/**
- * Provides an endpoint to find projects by ID
- */
-Path("/project/{id}")
-Produces(MediaType.APPLICATION_JSON)
-Consumes(MediaType.APPLICATION_JSON)
-public class ProjectLookupResource(dao: ProjectDao) : ProjectResource(dao) {
-    GET public fun find(PathParam("id") id: String): ProjectModel {
-        // TODO: Filter input
-        val uuid = assertValidUuid(Parameter("id", id, ParamLocation.URI))
-        return dao.get(uuid)
+    Path("{id}")
+    GET public fun getById(Context uriInfo: UriInfo, PathParam("id") id: String): ProjectModel {
+        val param = Parameter("id", id, ParamLocation.URI, uriInfo)
+        val uuidParam = Parameter("id", assertValidUuid(param), ParamLocation.URI, uriInfo)
+        return get(uuidParam, dao)
     }
-}
 
-/**
- * Provides an endpoint to find possible project options
- */
-Produces(MediaType.APPLICATION_JSON)
-Path("/project/options/{option}")
-public class ProjectOptionsResource : Resource {
-    public val options: List<String> = listOf(
-            "license",
-            "language",
-            "framework_testing",
-            "framework_logging"
-    )
-    // calculate this before hand to avoid calling toString() over and over again
-    public val optionsString: String by Delegates.lazy { options.toString() }
+    Path("{id}/download")
+    Produces("application/zip")
+    GET public fun download(Context uriInfo: UriInfo, PathParam("id") id: String): StreamingOutput {
+        log.info("Request to download project with id of $id")
+        val param = Parameter("id", id, ParamLocation.URI, uriInfo)
+        val uuid = assertValidUuid(param)
+        val project = dao.get(uuid)
+        throwWhenTrue(project == null, { NotFoundException("No project by that ID", ErrorCode.NOT_FOUND, param) })
+        throwWhenTrue(!builder.downloadAvailable(project!!), {
+            RequestException(code = ErrorCode.DOWNLOAD_NOT_READY,
+                    why = "Download is not ready for that project (status is '${project.getStatus()}')",
+                    status = 403,
+                    param = param)
+        })
+        return builder.download(project)
+    }
 
-    GET public fun fetch(PathParam("option") option: String): List<String> {
-        assertStringIsEnumValue(Parameter("option", option, ParamLocation.URI), ProjectOption.values())
+    Path("options")
+    GET public fun listOptions() : List<String> = ProjectOption.values().map { it.name().toLowerCase() }
+
+    Path("options/{option}")
+    GET public fun fetch(Context uriInfo: UriInfo, PathParam("option") option: String): List<String> {
+        assertStringIsEnumValue(Parameter("option", option, ParamLocation.URI, uriInfo), ProjectOption.values())
         return ProjectOption.valueOf(option.toUpperCase()).values
     }
 }

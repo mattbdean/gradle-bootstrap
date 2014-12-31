@@ -1,9 +1,9 @@
-package net.dean.gbs.test
+package net.dean.gbs.web.test
 
 import org.junit.Test as test
 import org.junit.Assert.assertEquals
-import com.fasterxml.jackson.databind.ObjectMapper
 import net.dean.gbs.web.GradleBootstrapConf
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.dropwizard.testing.FixtureHelpers
 import net.dean.gbs.web.models.ProjectModel
 
@@ -14,7 +14,7 @@ public class FixtureTest {
         GradleBootstrapConf.configureObjectMapper(mapper)
     }
 
-    public test fun testPersonFixture() {
+    public org.junit.Test fun testPersonFixture() {
         val expected = TestUtils.newProjectModel()
         val actual = mapper.readValue(FixtureHelpers.fixture("fixtures/project.json"), javaClass<ProjectModel>())
 

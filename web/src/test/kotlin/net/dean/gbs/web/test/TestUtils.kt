@@ -1,17 +1,18 @@
-package net.dean.gbs.test
+package net.dean.gbs.web.test
 
-import net.dean.gbs.api.models.Project
+import javax.ws.rs.core.MultivaluedMap
 import net.dean.gbs.web.models.ProjectModel
+import kotlin.platform.platformStatic
+import net.dean.gbs.api.models.Project
+import com.sun.jersey.core.util.MultivaluedMapImpl
+import net.dean.gbs.web.models.BuildStatus
+import java.util.UUID
 import org.joda.time.DateTimeZone
 import org.joda.time.DateTime
-import java.util.UUID
-import net.dean.gbs.api.models.TestingFramework
-import net.dean.gbs.api.models.LoggingFramework
-import net.dean.gbs.api.models.License
 import net.dean.gbs.api.models.Language
-import kotlin.platform.platformStatic
-import javax.ws.rs.core.MultivaluedMap
-import com.sun.jersey.core.util.MultivaluedMapImpl
+import net.dean.gbs.api.models.License
+import net.dean.gbs.api.models.LoggingFramework
+import net.dean.gbs.api.models.TestingFramework
 
 public object TestUtils {
     private val name = "app"
@@ -35,7 +36,7 @@ public object TestUtils {
     }
 
     public platformStatic fun newProjectModel(): ProjectModel {
-        return ProjectModel.fromProject(newProject(), uuid, created, created)
+        return ProjectModel.fromProject(newProject(), uuid, created, created, BuildStatus.ENQUEUED)
     }
 
     public platformStatic fun ProjectModel.toMultivaluedMap(): MultivaluedMap<String, String> {

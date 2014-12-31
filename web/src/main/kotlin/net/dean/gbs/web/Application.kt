@@ -13,16 +13,14 @@ import com.fasterxml.jackson.annotation.JsonProperty as jsonProperty
 import javax.validation.constraints.NotNull as notNull
 import javax.validation.Valid as valid
 import net.dean.gbs.web.db.ProjectDao
-import net.dean.gbs.web.resources.ProjectBulkLookupResource
-import net.dean.gbs.web.resources.ProjectCreationResource
-import net.dean.gbs.web.resources.ProjectLookupResource
-import net.dean.gbs.web.resources.ProjectOptionsResource
+import net.dean.gbs.web.resources.ProjectResource
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.dropwizard.jackson.FuzzyEnumModule
 import java.util.Date
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
+import java.nio.file.Paths
 
 public class GradleBootstrap : Application<GradleBootstrapConf>() {
     class object {
@@ -39,16 +37,14 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
         GradleBootstrapConf.configureObjectMapper(environment.getObjectMapper())
 
         // Initialize database
-        val jdbi = DBIFactory().build(environment, configuration.dataSource, "h2")
+        val jdbi = DBIFactory().build(environment, configuration.database, "h2")
         val projectDao = jdbi.onDemand(javaClass<ProjectDao>())
+        val projectBuilder = ProjectBuilder(projectDao, Paths.get(configuration.downloadDirectory))
         projectDao.createTable()
 
         // Register resources
         listOf(
-                ProjectBulkLookupResource(projectDao),
-                ProjectCreationResource(projectDao),
-                ProjectLookupResource(projectDao),
-                ProjectOptionsResource()
+                ProjectResource(projectDao, projectBuilder)
         ).forEach {
             environment.jersey().register(it)
         }
@@ -56,7 +52,8 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
 }
 
 public class GradleBootstrapConf : Configuration() {
-    public valid notNull jsonProperty val dataSource: DataSourceFactory = DataSourceFactory()
+    public valid notNull jsonProperty val database: DataSourceFactory = DataSourceFactory()
+    public valid notNull jsonProperty val downloadDirectory: String = ""
     class object {
         public platformStatic fun configureObjectMapper(mapper: ObjectMapper) {
             // Dates will now automatically be serialized into the ISO-8601 format

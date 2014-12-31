@@ -1,11 +1,16 @@
 package net.dean.gbs.web
 
+import javax.ws.rs.core.UriInfo
+
 /**
  * Represents a parameter sent to the server
  */
-public data class Parameter(public val name: String,
-                            public val value: Any?,
-                            public val location: ParamLocation)
+public data class Parameter<T>(public val name: String,
+                            public val value: T,
+                            public val location: ParamLocation,
+                            uriInfo: UriInfo) {
+    public val uri: String = uriInfo.getAbsolutePath().getPath()
+}
 
 /**
  * Where a parameter is located

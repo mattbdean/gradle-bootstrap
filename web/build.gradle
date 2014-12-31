@@ -31,6 +31,9 @@ dependencies {
     testCompile "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
 
+sourceSets.main.resources.srcDir "../shared-data/data/"
+sourceSets.test.resources.srcDir "../shared-data/data/"
+
 dropwizard {
     mainClass = 'net.dean.gbs.web.GradleBootstrap'
     dropwizardConfigFile = 'config/development.yml'

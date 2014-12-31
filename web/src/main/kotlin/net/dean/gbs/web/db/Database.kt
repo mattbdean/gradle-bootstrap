@@ -22,6 +22,7 @@ import org.skife.jdbi.v2.sqlobject.BindingAnnotation
 import java.lang.annotation.Retention
 import java.lang.annotation.Target
 import net.dean.gbs.web.models.Model
+import net.dean.gbs.web.models.BuildStatus
 
 val tableName = "projects"
 
@@ -36,6 +37,7 @@ private object Col {
     val logging = "logging_framework"
     val license = "license"
     val languages = "languages" // Stored as comma separated values
+    val status = "status"
 }
 
 /**
@@ -59,7 +61,8 @@ public class ProjectModelMapper : ResultSetMapper<ProjectModel> {
         return ProjectModel.fromProject(proj,
                 r.getObject("id") as UUID,
                 Date(r.getLong(Col.created)),
-                Date(r.getLong(Col.updated)))
+                Date(r.getLong(Col.updated)),
+                BuildStatus.valueOf(r.getString("status").toUpperCase()))
     }
 }
 
@@ -91,7 +94,8 @@ public class ProjectModelBinderFactory : BinderFactory {
                         Col.testing to arg.getTestingFramework(),
                         Col.logging to arg.getLoggingFramework(),
                         Col.license to arg.getLicense(),
-                        Col.languages to arg.getLanguages().map { it.name().toLowerCase() }.join(",")
+                        Col.languages to arg.getLanguages().map { it.name().toLowerCase() }.join(","),
+                        Col.status to arg.getStatus()
                 )
 
                 for ((key, value) in bindings)
@@ -108,9 +112,10 @@ public class ProjectModelBinderFactory : BinderFactory {
  * M: Model type
  */
 public trait DataAccessObject<M : Model<*>> {
-    public fun get(id: UUID): M
+    public fun get(id: UUID): M?
     public fun getAll(): Iterator<M>
     public fun insert(model: M)
+    public fun update(model: M)
 }
 
 /**
@@ -134,7 +139,7 @@ public trait ProjectDao : DataAccessObject<ProjectModel> {
     ${Col.logging} VARCHAR NOT NULL,
     ${Col.license} VARCHAR NOT NULL,
     ${Col.languages} VARCHAR NOT NULL,
-
+    ${Col.status} VARCHAR NOT NULL,
     PRIMARY KEY (${Col.id})
 )
 """
@@ -147,11 +152,11 @@ public trait ProjectDao : DataAccessObject<ProjectModel> {
     SqlUpdate(
 """INSERT INTO $tableName (
         ${Col.name},${Col.group},${Col.version},${Col.testing},${Col.logging},${Col.license},${Col.languages},${Col.id},
-        ${Col.created},${Col.updated}
+        ${Col.created},${Col.updated},${Col.status}
     )
     VALUES (
         :${Col.name},:${Col.group},:${Col.version},:${Col.testing},:${Col.logging},:${Col.license},:${Col.languages},
-        :${Col.id},:${Col.created},:${Col.updated}
+        :${Col.id},:${Col.created},:${Col.updated},:${Col.status}
     )"""
     )
     public override fun insert(BindProjectModel model: ProjectModel)
@@ -160,12 +165,15 @@ public trait ProjectDao : DataAccessObject<ProjectModel> {
      * Retrieves a ProjectModel by its ID
      */
     SqlQuery("SELECT * FROM $tableName WHERE ${Col.id} = :${Col.id}")
-    public override fun get(Bind(Col.id) id: UUID): ProjectModel
+    public override fun get(Bind(Col.id) id: UUID): ProjectModel?
 
     /**
      * Retrieves a list of ProjectModels ordered by group
      */
     SqlQuery("SELECT * FROM $tableName ORDER BY ${Col.group} DESC")
     public override fun getAll(): Iterator<ProjectModel>
+
+    SqlUpdate("UPDATE $tableName SET ${Col.status}=:${Col.status}")
+    public override fun update(BindProjectModel model: ProjectModel)
 }
 
