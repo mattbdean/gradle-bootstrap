@@ -104,7 +104,7 @@ public class CreationTest {
      * "com.example.$name" and its base path will be "build/projects/$name
      */
     private fun newProject(name: String, lang: Language): Pair<Project, Path> {
-        val path = Paths.get("api/build/projects/normal/$name")
+        val path = Paths.get("build/projects/normal/$name")
         val proj = Project(name, "com.example.$name", languages = setOf(lang))
         // Delete the files before generating it so that if we want to examine the crated files after creation, we can.
         delete(path)

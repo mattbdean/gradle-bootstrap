@@ -7,17 +7,13 @@ import java.util.EnumSet
 /**
  * Represents a Gradle project
  */
-public class Project(val name: String, val group: String, val version: String = "0.0.1", val languages: Set<Language>) {
+public class Project(val name: String, val group: String, val version: String = "0.0.1", languages: Collection<Language>) {
     /** Set of directories to create */
     public val directoriesToCreate: MutableSet<String> = HashSet()
     public var license: License = License.NONE
-
-    private val internalRawFileWrites: MutableMap<String, String> = HashMap()
-    public val rawFileWrites: Map<String, String>
-        get() = internalRawFileWrites
-
     /** Represents the conceptual build.gradle file for this project */
-    public val build: GradleBuild = GradleBuild();
+    public val build: GradleBuild = GradleBuild()
+    public val languages: Set<Language> = HashSet(languages);
 
     {
         if (languages.size() == 0)
@@ -33,10 +29,6 @@ public class Project(val name: String, val group: String, val version: String = 
             l.configureOnto(build)
         }
     }
-
-    public fun enqueueRawFileWrite(file: String, text: String) {
-        internalRawFileWrites.put(file, text)
-    }
 }
 
 /**
@@ -47,7 +39,7 @@ public enum class Language : ModularGradleComponent {
     GROOVY { override val dep: Dependency? = Dependency("org.codehaus.groovy", "grovy-all") }
     SCALA {  override val dep: Dependency? = Dependency("org.scala-lang", "scala-library") }
     KOTLIN {
-        override val dep: Dependency? = null
+        override val dep: Dependency? = Dependency("org.jetbrains.kotlin", "kotlin-stdlib")
 
         override fun configureOnto(build: GradleBuild) {
             // See http://kotlinlang.org/docs/reference/using-gradle.html#configuring-dependencies
@@ -56,7 +48,7 @@ public enum class Language : ModularGradleComponent {
             build.plugins.add("kotlin")
 
             build.projectContext.add(Repository.MAVEN_CENTRAL)
-            build.projectContext.add(Dependency("org.jetbrains.kotlin", "kotlin-stdlib"))
+            build.projectContext.add(dep!!)
         }
     }
 

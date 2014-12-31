@@ -158,23 +158,23 @@ public class ProjectResource(private val dao: ProjectDao, private val builder: P
                            FormParam("logging") logging: String?,
                            FormParam("license") license: String?,
                            FormParam("languages") languages: String?): ProjectModel {
-        // name and group are required
+        // name, and group, and lang are required
         assertPresent(Parameter("name", name, ParamLocation.BODY, uriInfo),
-                      Parameter("group", group, ParamLocation.BODY, uriInfo))
+                      Parameter("group", group, ParamLocation.BODY, uriInfo),
+                      Parameter("languages", name, ParamLocation.BODY, uriInfo))
+
+        // Make sure that each language is supported
+        for (lang in languages!!.split(',')) {
+            assertStringIsEnumValue(Parameter("languages", lang, ParamLocation.BODY, uriInfo), Language.values())
+        }
 
         // testing and logging are optional, but they must be one of the values in their respective enums
-
         if (testing != null) assertStringIsEnumValue(Parameter("testing", testing, ParamLocation.BODY, uriInfo), TestingFramework.values())
         if (logging != null) assertStringIsEnumValue(Parameter("logging", logging, ParamLocation.BODY, uriInfo), LoggingFramework.values())
         if (license != null) assertStringIsEnumValue(Parameter("license", license, ParamLocation.BODY, uriInfo), License.values())
-        if (languages != null) {
-            for (lang in languages.split(',')) {
-                assertStringIsEnumValue(Parameter("languages", lang, ParamLocation.BODY, uriInfo), Language.values())
-            }
-        }
 
         // Create a project with the given name and group, using the default version if none was provided
-        val proj = Project(name!!, group!!, alternative(version, defaultVersion)!!)
+        val proj = Project(name!!, group!!, alternative(version, defaultVersion)!!, languages.split(",").map { Language.valueOf(it.toUpperCase())} )
 
         // Choose an alternative before evaluating the string because enum evaluation requires a fully upper case input,
         // which must be provided by calling testing!!.toUpperCase(). If testing was null, it would throw an exception
@@ -184,12 +184,6 @@ public class ProjectResource(private val dao: ProjectDao, private val builder: P
         proj.build.logging = LoggingFramework.valueOf(effectiveLogging!!.toUpperCase())
         val effectiveLicense = alternative(license, defaultLicense)
         proj.license = License.valueOf(effectiveLicense!!.toUpperCase())
-
-        if (languages != null && languages.trim().length() > 0) {
-            for (lang in languages.split(',')) {
-                proj.add(Language.valueOf(lang.toUpperCase()))
-            }
-        }
 
         val createdAt = GradleBootstrapConf.getCurrentDate()
         val model = ProjectModel.fromProject(proj, UUID.randomUUID(), createdAt, createdAt, BuildStatus.ENQUEUED)

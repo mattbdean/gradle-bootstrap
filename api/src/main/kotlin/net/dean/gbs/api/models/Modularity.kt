@@ -1,14 +1,18 @@
 package net.dean.gbs.api.models
 
-public trait ModularComponent {
-    public fun configureOnto(project: Project)
+public trait Component<T> {
+    public fun configureOnto(it: T)
 }
 
-public trait ModularGradleComponent : ModularComponent {
+public trait ProjectComponent : Component<Project> {
+    public override fun configureOnto(it: Project)
+}
+
+public trait ModularGradleComponent : ProjectComponent {
     public fun configureOnto(build: GradleBuild)
 
-    override fun configureOnto(project: Project) {
-        configureOnto(project.build)
+    override fun configureOnto(it: Project) {
+        configureOnto(it.build)
     }
 }
 
@@ -23,9 +27,8 @@ public trait Framework : ModularGradleComponent {
     }
 
     public fun deconfigureFrom(build: GradleBuild) {
-        for (dep in deps) {
+        for (dep in deps)
             build.projectContext.remove(dep)
-        }
     }
 }
 
