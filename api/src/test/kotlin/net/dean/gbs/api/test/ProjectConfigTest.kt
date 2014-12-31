@@ -43,8 +43,6 @@ public class ProjectConfigTest {
         if (langs.isEmpty())
             throw IllegalArgumentException("Must have more than one language")
 
-        val firstLang = langs[0]
-        val otherLangs = langs.copyOfRange(1, langs.size())
-        return Project("test-proj", "com.example.app", lang = firstLang, otherLangs = *otherLangs)
+        return Project("test-proj", "com.example.app", languages = setOf(*langs))
     }
 }

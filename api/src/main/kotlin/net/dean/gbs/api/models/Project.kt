@@ -7,7 +7,7 @@ import java.util.EnumSet
 /**
  * Represents a Gradle project
  */
-public class Project(val name: String, val group: String, val version: String = "0.0.1", lang: Language, vararg otherLangs: Language) {
+public class Project(val name: String, val group: String, val version: String = "0.0.1", val languages: Set<Language>) {
     /** Set of directories to create */
     public val directoriesToCreate: MutableSet<String> = HashSet()
     public var license: License = License.NONE
@@ -18,10 +18,11 @@ public class Project(val name: String, val group: String, val version: String = 
 
     /** Represents the conceptual build.gradle file for this project */
     public val build: GradleBuild = GradleBuild();
-    public val languages: Set<Language>
 
     {
-        languages = EnumSet.of(lang, *otherLangs)
+        if (languages.size() == 0)
+            throw IllegalArgumentException("Must have at least one language")
+
         for (l in languages) {
             val name = l.name().toLowerCase()
             val packageFolders = group.replace('.', '/')

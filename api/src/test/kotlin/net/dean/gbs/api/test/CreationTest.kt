@@ -35,9 +35,9 @@ public class CreationTest {
         // Logging framework: NONE vs <SLF4J or LOG4J> vs <any other>
         // SLF4J and Log4J both require multiple dependencies, while the others don't
         val loggingOptions = array(LoggingFramework.NONE, LoggingFramework.LOGBACK_CLASSIC, LoggingFramework.APACHE_COMMONS)
-        // Languages: <none> vs <any other> vs KOTLIN
+        // Languages: <any other> vs KOTLIN
         // Kotlin requires a custom meta-dependency (plugin) and a compile-time dependency, while the others require
-        // a built-in plugin and a single compile-time dependency
+        // a built-in plugin and a compile-time dependency
         val languageOptions = array(Language.GROOVY, Language.KOTLIN)
         val projectAmount = licenseOptions.size() * testingOptions.size() * loggingOptions.size() * languageOptions.size()
         log.info("Testing $projectAmount unique projects")
@@ -67,18 +67,14 @@ public class CreationTest {
         // Testing zip functionality is only required for one project. Testing multiple will only serve to make the test longer
         if (zip)
             testZip(proj, root)
-        validateGradleBuild(proj, root)
+        validateGradleBuild(root)
     }
 
     /**
      * Executes "gradle build" in a given directory and asserts that the exit code of that process is equal to 0.
      */
-    private fun validateGradleBuild(proj: Project, rootPath: Path) {
-        val task = if (proj.languages.size() == 0) {
-            // No 'build' task unless there are languages applied, use "tasks" since it still checks syntax
-            "tasks"
-        } else "build"
-        val command = array("gradle", task)
+    private fun validateGradleBuild(rootPath: Path) {
+        val command = array("gradle", "build")
         val dir = rootPath.toFile()
         val process = ProcessBuilder()
                 .directory(dir)
@@ -109,7 +105,7 @@ public class CreationTest {
      */
     private fun newProject(name: String, lang: Language): Pair<Project, Path> {
         val path = Paths.get("api/build/projects/normal/$name")
-        val proj = Project(name, "com.example.$name", lang = lang)
+        val proj = Project(name, "com.example.$name", languages = setOf(lang))
         // Delete the files before generating it so that if we want to examine the crated files after creation, we can.
         delete(path)
         return proj to path
