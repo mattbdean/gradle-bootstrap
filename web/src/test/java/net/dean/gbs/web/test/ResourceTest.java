@@ -22,7 +22,6 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -92,8 +91,8 @@ public class ResourceTest {
         for (int i = 0; i < count; i++) {
             models.add(new ProjectModel(
                     UUID.randomUUID(),
-                    new Date(),
-                    new Date(),
+                    GradleBootstrapConf.getCurrentDate(),
+                    GradleBootstrapConf.getCurrentDate(),
                     String.format("app%d", i),
                     String.format("com.example.app%d", i),
                     "1.0",

@@ -6,8 +6,8 @@ import net.dean.gbs.api.models.License;
 import net.dean.gbs.api.models.LoggingFramework;
 import net.dean.gbs.api.models.Project;
 import net.dean.gbs.api.models.TestingFramework;
+import org.joda.time.DateTime;
 
-import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
@@ -19,8 +19,8 @@ import java.util.UUID;
 @JsonSnakeCase
 public final class ProjectModel implements Model<Project> {
     protected UUID id;
-    protected Date createdAt;
-    protected Date updatedAt;
+    protected DateTime createdAt;
+    protected DateTime updatedAt;
     protected String name;
     protected String group;
     protected String version;
@@ -34,7 +34,7 @@ public final class ProjectModel implements Model<Project> {
         // JSON serialization
     }
 
-    public ProjectModel(UUID id, Date createdAt, Date updatedAt, String name, String group, String version,
+    public ProjectModel(UUID id, DateTime createdAt, DateTime updatedAt, String name, String group, String version,
                         TestingFramework testingFramework, LoggingFramework loggingFramework, License license,
                         Set<Language> languages, BuildStatus status) {
         this.id = id;
@@ -50,7 +50,7 @@ public final class ProjectModel implements Model<Project> {
         this.languages = languages;
     }
 
-    public static ProjectModel fromProject(Project project, UUID id, Date createdAt, Date updatedAt, BuildStatus status) {
+    public static ProjectModel fromProject(Project project, UUID id, DateTime createdAt, DateTime updatedAt, BuildStatus status) {
         return new ProjectModel(id,
                 createdAt,
                 updatedAt,
@@ -68,11 +68,11 @@ public final class ProjectModel implements Model<Project> {
         return id;
     }
 
-    public Date getCreatedAt() {
+    public DateTime getCreatedAt() {
         return createdAt;
     }
 
-    public Date getUpdatedAt() {
+    public DateTime getUpdatedAt() {
         return updatedAt;
     }
 
@@ -112,11 +112,11 @@ public final class ProjectModel implements Model<Project> {
         this.id = id;
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public void setCreatedAt(DateTime createdAt) {
         this.createdAt = createdAt;
     }
 
-    public void setUpdatedAt(Date updatedAt) {
+    public void setUpdatedAt(DateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
 

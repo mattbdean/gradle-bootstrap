@@ -2,7 +2,6 @@ package net.dean.gbs.web.db
 
 import java.sql.ResultSet
 import org.skife.jdbi.v2.StatementContext
-import java.util.Date
 import net.dean.gbs.api.models.Language
 import net.dean.gbs.api.models.TestingFramework
 import net.dean.gbs.api.models.LoggingFramework
@@ -23,6 +22,7 @@ import java.lang.annotation.Retention
 import java.lang.annotation.Target
 import net.dean.gbs.web.models.Model
 import net.dean.gbs.web.models.BuildStatus
+import org.joda.time.DateTime
 
 val tableName = "projects"
 
@@ -55,8 +55,8 @@ public class ProjectModelMapper : ResultSetMapper<ProjectModel> {
 
         return ProjectModel.fromProject(proj,
                 r.getObject("id") as UUID,
-                Date(r.getLong(Col.created)),
-                Date(r.getLong(Col.updated)),
+                DateTime(r.getLong(Col.created)),
+                DateTime(r.getLong(Col.updated)),
                 BuildStatus.valueOf(r.getString("status").toUpperCase()))
     }
 }
@@ -81,8 +81,8 @@ public class ProjectModelBinderFactory : BinderFactory {
                 // Bind SQL query parameters to ProjectModel properties
                 val bindings = mapOf(
                         Col.id to arg.getId(),
-                        Col.created to arg.getCreatedAt().getTime(),
-                        Col.updated to arg.getCreatedAt().getTime(),
+                        Col.created to arg.getCreatedAt().toInstant().getMillis(),
+                        Col.updated to arg.getCreatedAt().toInstant().getMillis(),
                         Col.name to arg.getName(),
                         Col.group to arg.getGroup(),
                         Col.version to arg.getVersion(),

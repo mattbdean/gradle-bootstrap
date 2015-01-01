@@ -14,7 +14,6 @@ import net.dean.gbs.api.models.License
 import javax.ws.rs.FormParam
 import net.dean.gbs.api.models.Project
 import java.util.UUID
-import java.util.Date
 import net.dean.gbs.web.db.ProjectDao
 import kotlin.properties.Delegates
 import net.dean.gbs.web.Parameter
@@ -161,7 +160,7 @@ public class ProjectResource(private val dao: ProjectDao, private val builder: P
         // name, and group, and lang are required
         assertPresent(Parameter("name", name, ParamLocation.BODY, uriInfo),
                       Parameter("group", group, ParamLocation.BODY, uriInfo),
-                      Parameter("languages", name, ParamLocation.BODY, uriInfo))
+                      Parameter("languages", languages, ParamLocation.BODY, uriInfo))
 
         // Make sure that each language is supported
         for (lang in languages!!.split(',')) {

@@ -2,13 +2,13 @@ package net.dean.gbs.web.test
 
 import org.junit.Test as test
 import org.junit.Assert.assertEquals
-import net.dean.gbs.web.GradleBootstrapConf
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.dropwizard.testing.FixtureHelpers
 import net.dean.gbs.web.models.ProjectModel
+import io.dropwizard.jackson.Jackson
+import net.dean.gbs.web.GradleBootstrapConf
 
 public class FixtureTest {
-    private val mapper = ObjectMapper();
+    private val mapper = Jackson.newObjectMapper();
 
     {
         GradleBootstrapConf.configureObjectMapper(mapper)

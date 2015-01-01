@@ -1,27 +1,17 @@
 package net.dean.gbs.web.models
 
 import com.fasterxml.jackson.annotation.JsonProperty as jsonProperty
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonProperty
 import java.util.UUID
-import java.util.Date
-import net.dean.gbs.api.models.Language
-import java.util.HashSet
 import net.dean.gbs.api.models.Project
-import kotlin.platform.platformStatic
-import net.dean.gbs.api.models.TestingFramework
-import net.dean.gbs.api.models.LoggingFramework
-import net.dean.gbs.api.models.License
-import javax.ws.rs.core.MultivaluedMap
-import com.sun.jersey.core.util.MultivaluedMapImpl
+import org.joda.time.DateTime
 
 public trait Model<T> {
     public var id: UUID?
-    public var createdAt: Date?
-    public var updatedAt: Date?
+    public var createdAt: DateTime?
+    public var updatedAt: DateTime?
 }
 
-public fun fromProject(proj: Project, id: UUID, createdAt: Date, updatedAt: Date): ProjectModel {
+public fun fromProject(proj: Project, id: UUID, createdAt: DateTime, updatedAt: DateTime): ProjectModel {
     val model = ProjectModel()
     model.id = id
     model.createdAt = createdAt
