@@ -36,7 +36,7 @@ public class CodeGenerator(private val root: Path) : Closeable {
     private var lastLineType: LineType? = null
     private val indent: Indent = Indent.spaces(4)
 
-    // Only allow write access to this class
+    // Only allow private write access
     public val history: List<Path>
         get() = _history
     private val _history: MutableList<Path> = ArrayList()
@@ -102,7 +102,7 @@ public class CodeGenerator(private val root: Path) : Closeable {
         lastLineType = lineType
     }
 
-    private fun newLine() {
+    public fun newLine() {
         checkWriting(true)
         writer!!.append(newLine)
     }

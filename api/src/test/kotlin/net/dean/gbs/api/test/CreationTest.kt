@@ -34,11 +34,11 @@ public class CreationTest {
         val testingOptions = array(TestingFramework.NONE, TestingFramework.TESTNG, TestingFramework.JUNIT)
         // Logging framework: NONE vs <SLF4J or LOG4J> vs <any other>
         // SLF4J and Log4J both require multiple dependencies, while the others don't
-        val loggingOptions = array(LoggingFramework.NONE, LoggingFramework.LOGBACK_CLASSIC, LoggingFramework.APACHE_COMMONS)
-        // Languages: <any other> vs KOTLIN
+        val loggingOptions = array(LoggingFramework.NONE, LoggingFramework.SLF4J, LoggingFramework.LOGBACK_CLASSIC)
+        // Languages: JAVA vs <any other> vs KOTLIN
         // Kotlin requires a custom meta-dependency (plugin) and a compile-time dependency, while the others require
-        // a built-in plugin and a compile-time dependency
-        val languageOptions = array(Language.GROOVY, Language.KOTLIN)
+        // a built-in plugin and a compile-time dependency, except for Java, which only requires its built-in plugin
+        val languageOptions = array(Language.JAVA, Language.GROOVY, Language.KOTLIN)
         val projectAmount = licenseOptions.size() * testingOptions.size() * loggingOptions.size() * languageOptions.size()
         log.info("Testing $projectAmount unique projects")
 

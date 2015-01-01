@@ -26,12 +26,10 @@ public object TestUtils {
     private val uuid = UUID.fromString("f3b4d46c-e691-4c6b-b7c7-feed491d0dbd")
 
     public platformStatic fun newProject(): Project {
-        val proj = Project(name, group, version)
+        val proj = Project(name, group, version, languages)
         proj.build.testing = testing
         proj.build.logging = logging
         proj.license = license
-        for (lang in languages)
-            proj.add(lang)
         return proj
     }
 

@@ -48,7 +48,7 @@ public class ProjectModelMapper : ResultSetMapper<ProjectModel> {
         // Use the Project class and ProjectModel.fromProject as a shortcut. Can be modified to use only a ProjectModel
         // later if necessary
         val proj = Project(r.getString(Col.name), r.getString(Col.group),
-                r.getString(Col.languages).split(",").map { Language.valueOf(it.toUpperCase())})
+                languages = r.getString(Col.languages).split(",").map { Language.valueOf(it.toUpperCase())})
         proj.license = License.valueOf(r.getString(Col.license).toUpperCase())
         proj.build.logging = LoggingFramework.valueOf(r.getString(Col.logging).toUpperCase())
         proj.build.testing = TestingFramework.valueOf(r.getString(Col.testing).toUpperCase())

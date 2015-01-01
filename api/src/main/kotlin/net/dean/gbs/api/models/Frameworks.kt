@@ -32,10 +32,6 @@ public enum class LoggingFramework : Framework {
         override val deps = array(Dependency(group, "log4j-core"), Dependency(group, "log4j-api"))
     }
 
-    APACHE_COMMONS {
-        override val deps = array(Dependency("commons-logging", "commons-logging"))
-    }
-
     LOGBACK_CLASSIC {
         override val deps = array(Dependency("ch.qos.logback", "logback-classic"))
     }
