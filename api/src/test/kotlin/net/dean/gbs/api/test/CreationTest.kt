@@ -27,8 +27,6 @@ public class CreationTest {
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
     public test fun testSignificantPermutations() {
-        // License: NONE vs <any other>
-        val licenseOptions = array(License.NONE, License.GPL2)
         // Testing framework: NONE vs TESTNG vs <any other>
         // TestNG tests require a useTestNG() call in the buildscript, while the others don't
         val testingOptions = array(TestingFramework.NONE, TestingFramework.TESTNG, TestingFramework.JUNIT)
@@ -39,23 +37,22 @@ public class CreationTest {
         // Kotlin requires a custom meta-dependency (plugin) and a compile-time dependency, while the others require
         // a built-in plugin and a compile-time dependency, except for Java, which only requires its built-in plugin
         val languageOptions = array(Language.JAVA, Language.GROOVY, Language.KOTLIN)
-        val projectAmount = licenseOptions.size() * testingOptions.size() * loggingOptions.size() * languageOptions.size()
+        val projectAmount = testingOptions.size() * loggingOptions.size() * languageOptions.size()
         log.info("Testing $projectAmount unique projects")
 
         var counter = 0
-        for (license in licenseOptions)
-            for (testing in testingOptions)
-                for (logging in loggingOptions)
-                    for (lang in languageOptions) {
-                        val id = "$license-$testing-$logging-$lang"
-                        log.info("Evaluating project #${++counter}: (license=$license,testing=$testing,logging=$logging," +
-                                "lang=$lang)")
-                        val (proj, path) = newProject("permutation-$counter-$id", lang = lang)
-                        proj.license = license
-                        proj.build.testing = testing
-                        proj.build.logging = logging
-                        validateProject(proj, path)
-                    }
+        for (testing in testingOptions)
+            for (logging in loggingOptions)
+                for (lang in languageOptions) {
+                    val id = "$testing-$logging-$lang"
+                    log.info("Evaluating project #${++counter}: (testing=$testing,logging=$logging," +
+                            "lang=$lang)")
+                    val (proj, path) = newProject("permutation-$counter-$id", lang = lang)
+                    proj.license = License.NONE
+                    proj.build.testing = testing
+                    proj.build.logging = logging
+                    validateProject(proj, path)
+                }
     }
 
     /**

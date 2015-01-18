@@ -8,9 +8,12 @@ server:
 
 database:
   driverClass: org.h2.Driver
-  url: jdbc:h2:tcp://localhost/~/.gradle-bootstrap/db/server
-  user: sa
+  url: jdbc:h2:mem:db1
+  user: theChosenOne
   validationQuery: "/* Health check */ SELECT 1"
+  properties:
+    hibernate.hbm2ddl.auto: create
+    hibernate.show_sql: true
 
 downloadDirectory: build/web/downloads
 

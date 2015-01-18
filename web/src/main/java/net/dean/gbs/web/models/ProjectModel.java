@@ -1,6 +1,7 @@
 package net.dean.gbs.web.models;
 
-import io.dropwizard.jackson.JsonSnakeCase;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Joiner;
 import net.dean.gbs.api.models.Language;
 import net.dean.gbs.api.models.License;
 import net.dean.gbs.api.models.LoggingFramework;
@@ -8,38 +9,53 @@ import net.dean.gbs.api.models.Project;
 import net.dean.gbs.api.models.TestingFramework;
 import org.joda.time.DateTime;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 // This is done in Java for two reasons:
 // 1. We want to automatically generate a toString(), hashCode(), and equals() method by applying the kotlin.data
 //    annotation, but Kotlin will only generate those methods if all properties are initialized in the constructor.
 // 2. When this happens, Kotlin will generate component1(), component2(), etc. methods that mess with Jackson
 //    serialization
-@JsonSnakeCase
-public final class ProjectModel implements Model<Project> {
-    protected UUID id;
-    protected DateTime createdAt;
-    protected DateTime updatedAt;
-    protected String name;
-    protected String group;
-    protected String version;
-    protected String testingFramework;
-    protected String loggingFramework;
-    protected String license;
-    protected Set<Language> languages;
-    protected String status;
+@Entity(name = "project")
+@Table(name = "projects")
+public final class ProjectModel extends Model {
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "group_name") // "group" is a keyword
+    private String group;
+
+    @Column(name = "version")
+    private String version;
+
+    @Column(name = "testing_fw")
+    private String testingFramework;
+
+    @Column(name = "logging_fw")
+    private String loggingFramework;
+
+    @Column(name = "license")
+    private String license;
+
+    @Column(name = "languages")
+    private String languages; // Stored as comma separated values
+
+    @Column(name = "status")
+    private String status;
 
     public ProjectModel() {
+        super();
         // JSON serialization
     }
 
-    public ProjectModel(UUID id, DateTime createdAt, DateTime updatedAt, String name, String group, String version,
+    public ProjectModel(DateTime createdAt, DateTime updatedAt, String name, String group, String version,
                         TestingFramework testingFramework, LoggingFramework loggingFramework, License license,
                         Set<Language> languages, BuildStatus status) {
-        this.id = id;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        super(createdAt, updatedAt);
         this.name = name;
         this.group = group;
         this.version = version;
@@ -47,12 +63,11 @@ public final class ProjectModel implements Model<Project> {
         setLoggingFramework(loggingFramework);
         setLicense(license);
         setStatus(status);
-        this.languages = languages;
+        setLanguages(languages);
     }
 
-    public static ProjectModel fromProject(Project project, UUID id, DateTime createdAt, DateTime updatedAt, BuildStatus status) {
-        return new ProjectModel(id,
-                createdAt,
+    public static ProjectModel fromProject(Project project, DateTime createdAt, DateTime updatedAt, BuildStatus status) {
+        return new ProjectModel(createdAt,
                 updatedAt,
                 project.getName(),
                 project.getGroup(),
@@ -64,60 +79,49 @@ public final class ProjectModel implements Model<Project> {
                 status);
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public DateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public DateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
+    @JsonProperty("name")
     public String getName() {
         return name;
     }
 
+    @JsonProperty("group")
     public String getGroup() {
         return group;
     }
 
+    @JsonProperty("version")
     public String getVersion() {
         return version;
     }
 
+    @JsonProperty("testing_framework")
     public String getTestingFramework() {
         return testingFramework;
     }
 
+    @JsonProperty("logging_framework")
     public String getLoggingFramework() {
         return loggingFramework;
     }
 
+    @JsonProperty("license")
     public String getLicense() {
         return license;
     }
 
-    public Set<Language> getLanguages() {
-        return languages;
+    @JsonProperty("languages")
+    public Set<String> getLanguages() {
+        String[] strArray = languages.split(",");
+        Set<String> set = new HashSet<String>(strArray.length);
+        for (String str : strArray) {
+            set.add(str.toLowerCase());
+        }
+        return set;
     }
 
+    @JsonProperty("status")
     public String getStatus() {
         return status;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public void setCreatedAt(DateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setUpdatedAt(DateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     public void setName(String name) {
@@ -145,65 +149,15 @@ public final class ProjectModel implements Model<Project> {
     }
 
     public void setLanguages(Set<Language> languages) {
-        this.languages = languages;
+        Set<String> lowercaseLangs = new HashSet<String>(languages.size());
+        for (Language lang : languages) {
+            lowercaseLangs.add(lang.name().toLowerCase());
+        }
+        this.languages = Joiner.on(',').join(lowercaseLangs);
     }
 
     public void setStatus(BuildStatus status) {
         this.status = status.name().toLowerCase();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ProjectModel that = (ProjectModel) o;
-
-        if (createdAt != null ? !createdAt.equals(that.createdAt) : that.createdAt != null) return false;
-        if (group != null ? !group.equals(that.group) : that.group != null) return false;
-        if (id != null ? !id.equals(that.id) : that.id != null) return false;
-        if (languages != null ? !languages.equals(that.languages) : that.languages != null) return false;
-        if (license != null ? !license.equals(that.license) : that.license != null) return false;
-        if (loggingFramework != null ? !loggingFramework.equals(that.loggingFramework) : that.loggingFramework != null)
-            return false;
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        if (testingFramework != null ? !testingFramework.equals(that.testingFramework) : that.testingFramework != null)
-            return false;
-        if (updatedAt != null ? !updatedAt.equals(that.updatedAt) : that.updatedAt != null) return false;
-        if (version != null ? !version.equals(that.version) : that.version != null) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = id != null ? id.hashCode() : 0;
-        result = 31 * result + (createdAt != null ? createdAt.hashCode() : 0);
-        result = 31 * result + (updatedAt != null ? updatedAt.hashCode() : 0);
-        result = 31 * result + (name != null ? name.hashCode() : 0);
-        result = 31 * result + (group != null ? group.hashCode() : 0);
-        result = 31 * result + (version != null ? version.hashCode() : 0);
-        result = 31 * result + (testingFramework != null ? testingFramework.hashCode() : 0);
-        result = 31 * result + (loggingFramework != null ? loggingFramework.hashCode() : 0);
-        result = 31 * result + (license != null ? license.hashCode() : 0);
-        result = 31 * result + (languages != null ? languages.hashCode() : 0);
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "ProjectModel {" +
-                "id=" + id +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                ", name='" + name + '\'' +
-                ", group='" + group + '\'' +
-                ", version='" + version + '\'' +
-                ", testingFramework='" + testingFramework + '\'' +
-                ", loggingFramework='" + loggingFramework + '\'' +
-                ", license='" + license + '\'' +
-                ", languages=" + languages +
-                '}';
     }
 }
 

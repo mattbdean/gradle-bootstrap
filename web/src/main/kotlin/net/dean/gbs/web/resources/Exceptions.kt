@@ -10,8 +10,9 @@ import javax.ws.rs.core.UriInfo
  * Reasons why a request did not succeed
  */
 public enum class ErrorCode {
+    PASS_INVALID
+    PASS_EXPIRED
     DOWNLOAD_NOT_READY
-    INVALID_PARAM
     MALFORMED_UUID
     NOT_FOUND
     MISSING_PARAM
@@ -35,13 +36,13 @@ public data class JsonError(public val error: ErrorCode,
  * status: The HTTP status to respond to the client with
  * param: The parameter in question
  */
-public open class RequestException(code: ErrorCode,
+public open class RequestException(errorId: ErrorCode,
                                    why: String,
                                    status: Int,
                                    public val param: Parameter<*>) : WebApplicationException(
         Response.status(status)
                 .entity(JsonError(path = param.uri,
-                        error = code,
+                        error = errorId,
                         why = why,
                         param = param))
                 .type(MediaType.APPLICATION_JSON)
@@ -59,7 +60,7 @@ public open class RequestException(code: ErrorCode,
 public abstract class MalformedParameterException(errorId: ErrorCode,
                                                   why: String,
                                                   param: Parameter<*>) : RequestException (
-        code = errorId,
+        errorId = errorId,
         why = why,
         status = 422, // 422 Unprocessable Entity
         param = param
@@ -80,16 +81,24 @@ public class MissingRequiredParamException(param: Parameter<*>) : MalformedParam
 public class InvalidParamException(why: String,
                                    errorId: ErrorCode,
                                    param: Parameter<*>) : MalformedParameterException(
-                errorId = ErrorCode.INVALID_PARAM,
+                errorId = errorId,
                 why = why,
                 param = param
         )
 
 public class NotFoundException(why: String,
-                               errorId: ErrorCode,
                                param: Parameter<*>) : RequestException(
-                code = ErrorCode.NOT_FOUND,
+                errorId = ErrorCode.NOT_FOUND,
                 why = why,
                 param = param,
                 status = 404
+)
+
+public class ForbiddenException(why: String,
+                                errorId: ErrorCode,
+                                param: Parameter<*>) : RequestException(
+        errorId = errorId,
+        why = why,
+        param = param,
+        status = 403
 )

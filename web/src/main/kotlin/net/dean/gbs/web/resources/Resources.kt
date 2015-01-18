@@ -30,8 +30,13 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.UriInfo
+import javax.ws.rs.QueryParam
+import io.dropwizard.hibernate.UnitOfWork
+import org.hibernate.context.internal.ManagedSessionContext
+import javax.ws.rs.core.Response
+import org.hibernate.SessionFactory
 
-public trait Resource<M : Model<*>> {
+public trait Resource {
     /**
      * Throws the given lazy-evaluated RequestException when [test] is true
      */
@@ -40,7 +45,7 @@ public trait Resource<M : Model<*>> {
     }
 
     /**
-     * Throws a MissingRequiredParamException when the given parameter is null or it is a String and is emtpy
+     * Throws a MissingRequiredParamException when the given parameter is null or it is a String and is empty
      */
     public fun assertPresent(param: Parameter<*>) {
         throwWhenTrue(param.value == null || (param.value is String && (param.value as String).isEmpty()),
@@ -104,6 +109,19 @@ public trait Resource<M : Model<*>> {
         }
     }
 
+    public fun assertInDatabase<T : Model>(idParam: Parameter<String>, dao: DataAccessObject<T>, humanFriendlyName: String): T {
+        val uuid = assertValidUuid(idParam)
+        val model = dao.get(uuid)
+        throwWhenTrue(model == null, {
+            NotFoundException(
+                    why = "No $humanFriendlyName by that ID",
+                    param = idParam
+            )
+        })
+
+        return model!!
+    }
+
     /**
      * Returns [param] if it is non-null or [alt] otherwise
      */
@@ -111,19 +129,14 @@ public trait Resource<M : Model<*>> {
 }
 
 
-/** Provides an endpoint to create a project */
 Path("/project")
 Produces(MediaType.APPLICATION_JSON)
 Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-public class ProjectResource(private val dao: ProjectDao, private val builder: ProjectBuilder) : Resource<ProjectModel> {
+public class ProjectResource(public val projectDao: DataAccessObject<ProjectModel>,
+                             private val builder: ProjectBuilder) : Resource {
+
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
-    public fun get(param: Parameter<UUID>, dao: ProjectDao): ProjectModel {
-        val dbLookup = dao.get(param.value)
-        throwWhenTrue(dbLookup == null,
-                { InvalidParamException("No model by that ID", ErrorCode.NOT_FOUND, param) })
-        return dbLookup!!
-    }
     private val defaultVersion = "0.0.1"
     private val defaultTesting = TestingFramework.NONE.name()
     private val defaultLogging = LoggingFramework.NONE.name()
@@ -148,8 +161,7 @@ public class ProjectResource(private val dao: ProjectDao, private val builder: P
      * license: Project's license. Must be one of the values in [License].
      * languages: Comma-separated list of zero or more values in [Language].
      */
-    Timed
-    POST public fun create(Context uriInfo: UriInfo,
+    POST public fun createProject(Context uriInfo: UriInfo,
                            FormParam("name") name: String?,
                            FormParam("group") group: String?,
                            FormParam("version") version: String?,
@@ -185,47 +197,55 @@ public class ProjectResource(private val dao: ProjectDao, private val builder: P
         proj.license = License.valueOf(effectiveLicense!!.toUpperCase())
 
         val createdAt = GradleBootstrapConf.getCurrentDate()
-        val model = ProjectModel.fromProject(proj, UUID.randomUUID(), createdAt, createdAt, BuildStatus.ENQUEUED)
-        dao.insert(model)
+        val model = ProjectModel.fromProject(proj, createdAt, createdAt, BuildStatus.ENQUEUED)
+
         builder.enqueue(model)
         return model
     }
 
     Path("list")
-    GET public fun getAll(): Iterator<ProjectModel> {
+    UnitOfWork(readOnly = true)
+    GET public fun getAllProjects(): List<ProjectModel> {
         // TODO: Pagination
-        return dao.getAll()
+        return projectDao.getAll()
     }
 
     Path("{id}")
-    GET public fun getById(Context uriInfo: UriInfo, PathParam("id") id: String): ProjectModel {
-        val param = Parameter("id", id, ParamLocation.URI, uriInfo)
-        val uuidParam = Parameter("id", assertValidUuid(param), ParamLocation.URI, uriInfo)
-        return get(uuidParam, dao)
-    }
+    UnitOfWork(readOnly = true)
+    GET public fun getProject(Context uriInfo: UriInfo, PathParam("id") id: String): ProjectModel =
+        assertInDatabase(Parameter("id", id, ParamLocation.URI, uriInfo), projectDao, "project")
 
     Path("{id}/download")
     Produces("application/zip")
-    GET public fun download(Context uriInfo: UriInfo, PathParam("id") id: String): StreamingOutput {
-        log.info("Request to download project with id of $id")
-        val param = Parameter("id", id, ParamLocation.URI, uriInfo)
-        val uuid = assertValidUuid(param)
-        val project = dao.get(uuid)
-        throwWhenTrue(project == null, { NotFoundException("No project by that ID", ErrorCode.NOT_FOUND, param) })
-        throwWhenTrue(!builder.downloadAvailable(project!!), {
-            RequestException(code = ErrorCode.DOWNLOAD_NOT_READY,
+    UnitOfWork(readOnly = true)
+    GET public fun download(Context uriInfo: UriInfo, PathParam("id") id: String): Response {
+        // The project ID must be present
+        val projectIdParam = Parameter("id", id, ParamLocation.URI, uriInfo)
+        assertPresent(projectIdParam)
+
+        // Project ID and pass ID must be non-null, valid UUIDs, and in the database
+        val project = assertInDatabase(projectIdParam, projectDao, "project")
+
+        // Project is not ready for downloading
+        throwWhenTrue(!builder.downloadAvailable(project), {
+            ForbiddenException(errorId = ErrorCode.DOWNLOAD_NOT_READY,
                     why = "Download is not ready for that project (status is '${project.getStatus()}')",
-                    status = 403,
-                    param = param)
+                    param = projectIdParam)
         })
-        return builder.download(project)
+
+        // Everything checks out, download it
+        val (name, streamingOutput) = builder.stream(project)
+        return Response.ok(streamingOutput)
+                .type("application/zip")
+                .header("Content-Disposition", "attachment; filename=\"$name\"")
+                .build()
     }
 
     Path("options")
     GET public fun listOptions() : List<String> = ProjectOption.values().map { it.name().toLowerCase() }
 
     Path("options/{option}")
-    GET public fun fetch(Context uriInfo: UriInfo, PathParam("option") option: String): List<String> {
+    GET public fun getOption(Context uriInfo: UriInfo, PathParam("option") option: String): List<String> {
         assertStringIsEnumValue(Parameter("option", option, ParamLocation.URI, uriInfo), ProjectOption.values())
         return ProjectOption.valueOf(option.toUpperCase()).values
     }

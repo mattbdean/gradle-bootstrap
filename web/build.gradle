@@ -10,7 +10,7 @@ buildscript {
 }
 
 ext {
-    dropwizardVersion = '0.7.1'
+    dropwizardVersion = '0.8.0-rc2'
 }
 
 apply plugin: "kotlin"
@@ -21,13 +21,13 @@ repositories {
 }
 
 dependencies {
-    for (module in ['core', 'db', 'jackson', 'jdbi']) {
+    for (module in ['core', 'db', 'jackson', 'logging', 'hibernate']) {
         compile "io.dropwizard:dropwizard-$module:$dropwizardVersion"
     }
 
     runtime "com.h2database:h2:1.4.184"
     compile project(':api')
-    compile "org.slf4j:slf4j-api:$slf4jVersion"
+    compile "org.jadira.usertype:usertype.core:3.2.0.GA"
     testCompile "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
 
@@ -36,7 +36,7 @@ sourceSets.test.resources.srcDir "../shared-data/data/"
 
 dropwizard {
     mainClass = 'net.dean.gbs.web.GradleBootstrap'
-    dropwizardConfigFile = 'config/development.yml'
+    dropwizardConfigFile = 'config/persistent.yml'
 }
 
 

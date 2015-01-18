@@ -4,7 +4,6 @@ import io.dropwizard.Application
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import kotlin.platform.platformStatic
-import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.Configuration
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat
 import io.dropwizard.db.DataSourceFactory
@@ -14,9 +13,7 @@ import javax.validation.constraints.NotNull as notNull
 import javax.validation.Valid as valid
 import net.dean.gbs.web.db.ProjectDao
 import net.dean.gbs.web.resources.ProjectResource
-import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.dropwizard.jackson.FuzzyEnumModule
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import java.nio.file.Paths
@@ -28,16 +25,28 @@ import javax.ws.rs.ext.Provider as provider
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Context as context
 import javax.servlet.http.HttpServletRequest
+import io.dropwizard.hibernate.HibernateBundle
+import net.dean.gbs.web.models.ProjectModel
+import org.joda.time.Duration
+import net.dean.gbs.web.db.DataAccessObject
+import kotlin.properties.Delegates
 import javax.servlet.http.HttpUtils
 
 public class GradleBootstrap : Application<GradleBootstrapConf>() {
     class object {
         public platformStatic fun main(args: Array<String>) {
-            GradleBootstrap().run(args)
+            GradleBootstrap().run(*args)
+        }
+    }
+
+    val hibernate = object: HibernateBundle<GradleBootstrapConf>(javaClass<ProjectModel>()) {
+        override fun getDataSourceFactory(configuration: GradleBootstrapConf?): DataSourceFactory? {
+            return configuration!!.database
         }
     }
 
     override fun initialize(bootstrap: Bootstrap<GradleBootstrapConf>?) {
+        bootstrap!!.addBundle(hibernate)
     }
 
     override fun run(configuration: GradleBootstrapConf, environment: Environment) {
@@ -45,17 +54,11 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
         GradleBootstrapConf.configureObjectMapper(environment.getObjectMapper())
 
         // Initialize database
-        val jdbi = DBIFactory().build(environment, configuration.database, "h2")
-        val projectDao = jdbi.onDemand(javaClass<ProjectDao>())
-        val projectBuilder = ProjectBuilder(projectDao, Paths.get(configuration.downloadDirectory))
-        projectDao.createTable()
+        val sessionFactory = hibernate.getSessionFactory()
+        val projectDao: DataAccessObject<ProjectModel> = ProjectDao(sessionFactory)
+        val projectBuilder = ProjectBuilder(projectDao, Paths.get(configuration.downloadDirectory), sessionFactory)
 
-        // Register resources
-        listOf(
-                ProjectResource(projectDao, projectBuilder)
-        ).forEach {
-            environment.jersey().register(it)
-        }
+        environment.jersey().register(ProjectResource(projectDao, projectBuilder))
     }
 }
 
@@ -63,15 +66,19 @@ public class GradleBootstrapConf : Configuration() {
     public valid notNull jsonProperty val database: DataSourceFactory = DataSourceFactory()
     public valid notNull jsonProperty val downloadDirectory: String = ""
     class object {
-        public platformStatic val TIME_ZONE: DateTimeZone = DateTimeZone.UTC
+        public platformStatic val timeZone: DateTimeZone = DateTimeZone.UTC
+
+        /** The amount of time that can pass before one download pass expires. Equivalent to one hour. */
+        public platformStatic val expirationDuration: Duration = Duration.standardHours(1)
+
         public platformStatic fun configureObjectMapper(mapper: ObjectMapper) {
             // Dates will now automatically be serialized into the ISO-8601 format
             mapper.setDateFormat(ISO8601DateFormat())
-            // Use snake_case when serializing data
-            mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES)
         }
 
-        public platformStatic fun getCurrentDate(): DateTime = DateTime(TIME_ZONE)
+        public platformStatic fun getCurrentDate(): DateTime = DateTime(timeZone)
+        public platformStatic fun getPassExpirationDate(date: DateTime = getCurrentDate()): DateTime = date.plus(expirationDuration)
+        public var sessionFactory: GlobalSessionFactory by Delegates.notNull()
     }
 }
 
@@ -87,7 +94,12 @@ public provider class UnhandledExceptionLogger : ExceptionMapper<Throwable> {
 
         log.error("Unhandled exception", t)
         log.error("URL: ${HttpUtils.getRequestURL(request)}")
-        return Response.status(500).build()
+        return Response.status(500)
+                .build()
     }
+}
+
+public object GlobalSessionFactory {
+
 }
 
