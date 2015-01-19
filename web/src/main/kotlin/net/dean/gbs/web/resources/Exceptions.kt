@@ -10,13 +10,13 @@ import javax.ws.rs.core.UriInfo
  * Reasons why a request did not succeed
  */
 public enum class ErrorCode {
-    PASS_INVALID
-    PASS_EXPIRED
+    BAD_LENGTH
     DOWNLOAD_NOT_READY
+    INVALID_IDENTIFIER
     MALFORMED_UUID
-    NOT_FOUND
     MISSING_PARAM
     NOT_ENUM_VALUE
+    NOT_FOUND
 }
 
 /**

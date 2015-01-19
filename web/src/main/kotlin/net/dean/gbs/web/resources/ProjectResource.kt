@@ -14,7 +14,6 @@ import net.dean.gbs.api.models.License
 import javax.ws.rs.FormParam
 import net.dean.gbs.api.models.Project
 import java.util.UUID
-import kotlin.properties.Delegates
 import net.dean.gbs.web.Parameter
 import net.dean.gbs.web.ParamLocation
 import net.dean.gbs.web.models.ProjectModel
@@ -30,7 +29,10 @@ import javax.ws.rs.core.UriInfo
 import io.dropwizard.hibernate.UnitOfWork
 import javax.ws.rs.core.Response
 import net.dean.gbs.api.models.HumanReadable
-import javax.ws.rs.QueryParam
+import net.dean.gbs.web.models.Constraints
+import java.util.regex.Pattern
+import com.fasterxml.jackson.annotation.JsonValue
+import net.dean.gbs.web.models.ProjectOptionModel
 
 public trait ModelResource {
     /**
@@ -118,12 +120,29 @@ public trait ModelResource {
         return model!!
     }
 
+    public fun assertLengthInRange(param: Parameter<String?>, min: Int, max: Int, readableName: String) {
+        assertPresent(param)
+        val range = min..max
+        val length = param.value!!.length()
+        throwWhenTrue(length !in range) {
+            // First letter is capitalized, the rest are not
+            val name = Character.toUpperCase(readableName[0]) + readableName.substring(1).toLowerCase()
+            InvalidParamException(
+                    why = "$name length must be between ${range.start} and ${range.end}",
+                    errorId = ErrorCode.BAD_LENGTH,
+                    param = param)
+        }
+    }
+
+    public fun assertMatches(regex: Pattern, value: String, createException: () -> RequestException) {
+        throwWhenTrue(!regex.matcher(value).matches(), createException)
+    }
+
     /**
      * Returns [param] if it is non-null or [alt] otherwise
      */
     public fun alternative<T>(param: T, alt: T): T = param ?: alt
 }
-
 
 Path("/project")
 Produces(MediaType.APPLICATION_JSON)
@@ -133,10 +152,6 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
 
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
-    private val defaultVersion = "0.0.1"
-    private val defaultTesting = TestingFramework.NONE.name()
-    private val defaultLogging = LoggingFramework.NONE.name()
-    private val defaultLicense = License.NONE.name()
 
     /**
      * Creates a new project
@@ -158,9 +173,11 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
                            FormParam("license") license: String?,
                            FormParam("language") languages: String?): ProjectModel {
         // name, and group, and lang are required
-        assertPresent(Parameter("name", name, ParamLocation.BODY, uriInfo),
-                      Parameter("group", group, ParamLocation.BODY, uriInfo),
-                      Parameter("language", languages, ParamLocation.BODY, uriInfo))
+        val nameParam = Parameter("name", name, ParamLocation.BODY, uriInfo)
+        val groupParam = Parameter("group", group, ParamLocation.BODY, uriInfo)
+        assertPresent(nameParam, groupParam, Parameter("language", languages, ParamLocation.BODY, uriInfo))
+        validateName(nameParam)
+        validateGroup(groupParam)
 
         // Make sure that each language is supported
         for (lang in languages!!.split(',')) {
@@ -172,16 +189,20 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
         if (logging != null) assertStringIsEnumValue(Parameter("logging", logging, ParamLocation.BODY, uriInfo), LoggingFramework.values())
         if (license != null) assertStringIsEnumValue(Parameter("license", license, ParamLocation.BODY, uriInfo), License.values())
 
-        // Create a project with the given name and group, using the default version if none was provided
-        val proj = Project(name!!, group!!, alternative(version, defaultVersion)!!, languages.split(",").map { Language.valueOf(it.toUpperCase())} )
+        // Use the default version if one is not provided
+        val effectiveVersion = alternative(version, ProjectModel.DEFAULT_VERSION)!!
+        validateVersion(Parameter("version", effectiveVersion, ParamLocation.BODY, uriInfo))
+
+        // Create a project
+        val proj = Project(name!!, group!!, effectiveVersion, languages.split(",").map { Language.valueOf(it.toUpperCase())} )
 
         // Choose an alternative before evaluating the string because enum evaluation requires a fully upper case input,
         // which must be provided by calling testing!!.toUpperCase(). If testing was null, it would throw an exception
-        val effectiveTesting = alternative(testing, defaultTesting)
+        val effectiveTesting = alternative(testing, ProjectOption.TESTING.default.toString())
         proj.build.testing = TestingFramework.valueOf(effectiveTesting!!.toUpperCase())
-        val effectiveLogging = alternative(logging, defaultLogging)
+        val effectiveLogging = alternative(logging, ProjectOption.LOGGING.default.toString())
         proj.build.logging = LoggingFramework.valueOf(effectiveLogging!!.toUpperCase())
-        val effectiveLicense = alternative(license, defaultLicense)
+        val effectiveLicense = alternative(license, ProjectOption.LICENSE.default.toString())
         proj.license = License.valueOf(effectiveLicense!!.toUpperCase())
 
         val createdAt = GradleBootstrapConf.getCurrentDate()
@@ -189,6 +210,36 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
 
         builder.enqueue(model)
         return model
+    }
+
+    private fun validateName(name: Parameter<String?>) {
+        assertLengthInRange(name, Constraints.NAME_MIN_LENGTH, Constraints.NAME_MAX_LENGTH, "name")
+    }
+
+    private fun validateGroup(group: Parameter<String?>) {
+        assertPresent(group)
+        assertLengthInRange(group, Constraints.GROUP_MIN_LENGTH, Constraints.GROUP_MAX_LENGTH, "group")
+        val parts = group.value!!.split("\\.")
+
+        // Make sure each part is under the limit for directory names
+        for (part in parts) {
+            assertLengthInRange(Parameter(group.name, part, group.location, group.uriInfo),
+                    Constraints.DIR_MIN_LENGTH, Constraints.DIR_MAX_LENGTH, "group")
+        }
+
+        // Make sure the group is a valid Java identifier
+        assertMatches(Constraints.GROUP_PATTERN, group.value!!) {
+            InvalidParamException(
+                    why = "That is not a valid Java identifier",
+                    errorId = ErrorCode.INVALID_IDENTIFIER,
+                    param = group
+            )
+        }
+    }
+
+
+    private fun validateVersion(ver: Parameter<String?>) {
+        assertLengthInRange(ver, Constraints.VERSION_MIN_LENGTH, Constraints.VERSION_MAX_LENGTH, "version")
     }
 
     Path("list")
@@ -230,29 +281,21 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
     }
 
     Path("options")
-    GET public fun getOptions(Context uriInfo: UriInfo, QueryParam("values") option: String): Map<String, Map<String, String>> {
-        val param = Parameter("values", option, ParamLocation.URI, uriInfo)
-        if (param.value.isEmpty()) {
-            // No option provided, return all
-            return getOptions()
-        }
-
-        // Make sure each given option is an enum constant in ProjectOption
-        val options = option.split(',').map {
-            assertStringIsEnumValue(Parameter("option", it, ParamLocation.URI, uriInfo), ProjectOption.values())
-        }
-        return getOptions(options)
-    }
-
-    private fun getOptions(options: Iterable<ProjectOption> = ProjectOption.values().toArrayList()): Map<String, Map<String, String>> {
-        return hashMapOf(*options.map { it.name().toLowerCase() to it.values }.copyToArray())
-    }
+    GET public fun getOptions(): ProjectOptionModel = ProjectOptionModel.INSTANCE
 }
 
-public enum class ProjectOption(public val values: Map<String, String>) {
-    LICENSE: ProjectOption(hashMapOf(*License.values().map { it.toString().toLowerCase() to it.humanReadable}.copyToArray()))
-    LANGUAGE: ProjectOption(hashMapOf(*Language.values().map { it.toString().toLowerCase() to it.humanReadable}.copyToArray()))
-    TESTING : ProjectOption(hashMapOf(*TestingFramework.values().map { it.toString().toLowerCase() to it.humanReadable}.copyToArray()))
-    LOGGING : ProjectOption(hashMapOf(*LoggingFramework.values().map { it.toString().toLowerCase() to it.humanReadable}.copyToArray()))
+public enum class ProjectOption(public val values: Array<out HumanReadable>, public val default: HumanReadable) {
+    LICENSE: ProjectOption(
+            values = License.values(),
+            default = License.NONE)
+    LANGUAGE: ProjectOption(
+            values = Language.values(),
+            default = Language.JAVA)
+    TESTING : ProjectOption(
+            values = TestingFramework.values(),
+            default = TestingFramework.NONE)
+    LOGGING : ProjectOption(
+            values = LoggingFramework.values(),
+            default = LoggingFramework.NONE)
 }
 

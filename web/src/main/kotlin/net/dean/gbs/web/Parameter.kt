@@ -1,6 +1,7 @@
 package net.dean.gbs.web
 
 import javax.ws.rs.core.UriInfo
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 /**
  * Represents a parameter sent to the server
@@ -8,7 +9,9 @@ import javax.ws.rs.core.UriInfo
 public data class Parameter<T>(public val name: String,
                             public val value: T,
                             public val location: ParamLocation,
-                            uriInfo: UriInfo) {
+                            // Ignore uriInfo, will eventually try to serialize the ProjectResource and then act on the
+                            // database and throw an exception if no session context is currently bound
+                            public JsonIgnore val uriInfo: UriInfo) {
     public val uri: String = uriInfo.getAbsolutePath().getPath()
 }
 

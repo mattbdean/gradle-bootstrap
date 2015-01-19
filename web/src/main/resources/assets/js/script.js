@@ -4,11 +4,25 @@ $(function() {
 		submitProject();
 	});
 
-	var options = ["testing", "logging", "language", "license"];
 	// Fill in each option
-	$.get("/project/options?values=" + options.join(","), function(data) {
-		for (var i = 0; i < options.length; i++) {
-			addValues(options[i], data[options[i]]);
+	$.get("/project/options", function(data) {
+		var handledDefaults = [];
+		for (var option in data.enums) {
+			if (!data.enums.hasOwnProperty(option)) {
+				continue;
+			}
+			addValues(option, data.enums[option], data.defaults[option]);
+			handledDefaults.push(option)
+		}
+
+		for (option in data.defaults) {
+			if (!data.defaults.hasOwnProperty(option)) {
+				continue;
+			}
+			// We haven't handled this default value yet, assign it to an input
+			if ($.inArray(option, handledDefaults) === -1) {
+				$("input[id=" + option + "]").val(data.defaults[option])
+			}
 		}
 	});
 });
@@ -17,11 +31,10 @@ $(function() {
  * Collects all the data from the form and submits it using POST /project
  */
 function submitProject() {
-	var data = getProjectProperties()
 	$.ajax({
 		type: "POST",
 		url: "/project",
-		data: data,
+		data: getProjectProperties(),
 		contentType: "application/x-www-form-urlencoded",
 		success: function(data) {
 			watchForDownload(data)
@@ -76,7 +89,7 @@ function handleBuildError() {
 
 /**
  * Handles any errors returned from POST /project
- * @param jqXHR The XHR used to send this AJAX request
+ * @param jqXHR The XMLHttpRequest used to send this AJAX request
  */
 function handleSubmissionError(jqXHR) {
 	// TODO: Error handling
@@ -88,12 +101,12 @@ function handleSubmissionError(jqXHR) {
  * Gets the keys and values from every div.property's input or select attribute. If a <select> is present and multiple
  * options are selected, the selected values will be combined into a comma separated list.
  *
- * @returns {string}
+ * @returns {object}
  */
 function getProjectProperties() {
 	var postData = {};
 	$("div.property > input").each(function() {
-		// Assing map[id] = input value
+		// Assigning map[id] = input value
 		postData[$(this).attr("id")] = $(this).val()
 	});
 	$("div.property > select").each(function() {
@@ -109,13 +122,16 @@ function getProjectProperties() {
  * Adds the given values of the option to a &lt;select&gt; whose ID is the given option.
  *
  * @param option The ID of the &lt;select&gt; to add the data to
- * @param data A map of options, where the keys are the constants and values are their more human readable counterparts
+ * @param values A map of code names to human readable names
+ * @param defaultValue The default value for this element
  */
-function addValues(option, data) {
+function addValues(option, values, defaultValue) {
     var elem = $("select[id=" + option + "]");
-    $.each(data, function(key, value) {
+    $.each(values, function(key, value) {
         elem.append($("<option></option>")
             .attr("value", key)
             .text(value));
     });
+	// Set default value
+	elem.val(defaultValue)
 }

@@ -115,6 +115,9 @@ class ZipBodyReader(private val directory: Path) : MessageBodyReader<Path> {
             throw IllegalStateException("Expecting Content-Disposition header")
 
         val file = relativePath(directory, "project.zip")
+        if (Files.exists(file)) {
+            Files.delete(file);
+        }
         Files.copy(entityStream, file)
         return file
     }

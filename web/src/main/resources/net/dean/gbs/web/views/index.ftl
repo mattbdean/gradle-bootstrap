@@ -16,17 +16,17 @@
             <h2>Core</h2>
             <div class="property">
                 <label for="group">Package</label>
-                <input type="text" id="group" value="com.example">
+                <input type="text" id="group">
             </div>
 
             <div class="property">
                 <label for="name">Name</label>
-                <input type="text" id="name" value="myapp">
+                <input type="text" id="name">
             </div>
 
             <div class="property">
                 <label for="version">Version</label>
-                <input type="text" id="version" value="1.0">
+                <input type="text" id="version">
             </div>
 
             <div class="property">

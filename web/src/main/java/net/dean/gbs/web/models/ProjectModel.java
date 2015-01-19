@@ -12,6 +12,8 @@ import org.joda.time.DateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,13 +25,20 @@ import java.util.Set;
 @Entity(name = "project")
 @Table(name = "projects")
 public final class ProjectModel extends Model {
-    @Column(name = "name")
+    public static final String DEFAULT_NAME = "";
+    public static final String DEFAULT_GROUP = "";
+    public static final String DEFAULT_VERSION = "0.0.1";
+
+    @Column(name = "name", length = Constraints.GROUP_MAX_LENGTH)
+    @Size(min = Constraints.NAME_MIN_LENGTH, max = Constraints.NAME_MAX_LENGTH)
     private String name;
 
-    @Column(name = "group_name") // "group" is a keyword
+    @Column(name = "package") // "group" is a keyword
+    @Pattern(regexp = Constraints.GROUP_REGEX)
     private String group;
 
     @Column(name = "version")
+    @Size(min = Constraints.VERSION_MIN_LENGTH, max = Constraints.VERSION_MAX_LENGTH)
     private String version;
 
     @Column(name = "testing_fw")
