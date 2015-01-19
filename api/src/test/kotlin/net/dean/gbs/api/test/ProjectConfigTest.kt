@@ -8,7 +8,7 @@ import net.dean.gbs.api.models.Scope
 import net.dean.gbs.api.models.Project
 
 public class ProjectConfigTest {
-    public test fun testAddLang() {
+    public test fun testProperDirectories() {
         val proj = newProject(*Language.values())
         for (lang in Language.values()) {
             assert("src/main/${lang.name().toLowerCase()}/com/example/app" in proj.directoriesToCreate,
@@ -16,6 +16,9 @@ public class ProjectConfigTest {
             assert("src/test/${lang.name().toLowerCase()}/com/example/app" in proj.directoriesToCreate,
                     "Did not find test source set for $lang")
         }
+
+        assert("src/main/resources" in proj.directoriesToCreate, "src/main/resources not found")
+        assert("src/test/resources" in proj.directoriesToCreate, "src/test/resources not found")
     }
 
     public test fun testAddFrameworks() {

@@ -17,14 +17,17 @@ public class Project(val name: String, val group: String, val version: String = 
         if (languages.size() == 0)
             throw IllegalArgumentException("Must have at least one language")
 
-        for (l in languages) {
-            val name = l.name().toLowerCase()
-            val packageFolders = group.replace('.', '/')
-            for (sourceSet in array("main", "test")) {
+        for (sourceSet in array("main", "test")) {
+            for (l in languages) {
+                val name = l.name().toLowerCase()
+                val packageFolders = group.replace('.', '/')
                 // Example: src/main/java/com/example/app
                 directoriesToCreate.add("src/$sourceSet/$name/$packageFolders")
+                l.configureOnto(build)
             }
-            l.configureOnto(build)
+
+            // src/main/resources
+            directoriesToCreate.add("src/$sourceSet/resources")
         }
     }
 }
