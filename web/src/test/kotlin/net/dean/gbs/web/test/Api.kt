@@ -21,8 +21,9 @@ import javax.ws.rs.ext.MessageBodyReader
 import java.lang.reflect.Type
 import javax.ws.rs.core.MultivaluedMap
 import javax.ws.rs.Produces
-import javax.ws.rs.Consumes
 import javax.ws.rs.ext.Provider
+import org.glassfish.jersey.filter.LoggingFilter
+import org.slf4j.LoggerFactory
 
 public trait GbsApi {
     /*
@@ -52,6 +53,7 @@ public class GbsApiImpl(baseUrl: String, private val client: Client) : GbsApi {
         // Remove trailing slash
         this.baseUrl = if (!baseUrl.endsWith("/")) baseUrl else baseUrl.substring(0, baseUrl.length() - 1)
         this.target = client.target(baseUrl)
+        target.register(LoggingFilter())
     }
 
     override fun createProject(name: String, group: String, version: String, testing: TestingFramework, logging: LoggingFramework, license: License, languages: Set<Language>): ProjectModel {
@@ -62,7 +64,7 @@ public class GbsApiImpl(baseUrl: String, private val client: Client) : GbsApi {
                 "testing" to testing,
                 "logging" to logging,
                 "license" to license,
-                "languages" to languages.map { it.name().toLowerCase() }.join(",")
+                "language" to languages.map { it.name().toLowerCase() }.join(",")
         )
     }
 

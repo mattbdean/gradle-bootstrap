@@ -1,29 +1,14 @@
 package net.dean.gbs.api.io
 
 import java.nio.file.Path
-import java.util.ArrayList
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.HashMap
-import java.io.Closeable
-import java.io.Writer
-import java.nio.file.FileAlreadyExistsException
-import java.io.FileNotFoundException
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
-import java.io.BufferedOutputStream
-import java.io.FileOutputStream
-import java.io.File
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
-import java.io.FileInputStream
-import org.apache.commons.compress.utils.IOUtils
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.FileVisitResult
 import java.io.IOException
-import net.dean.gbs.api.models.Project
-import net.dean.gbs.api.models.DependencyContext
-import net.dean.gbs.api.models.GradleBuild
-import net.dean.gbs.api.models.TestingFramework
+import net.dean.gbs.api.models.License
+import java.io.FileNotFoundException
 
 /**
  * Retrieves a normalized path relative to the given path.
@@ -63,3 +48,17 @@ public fun delete(path: Path) {
         Files.delete(path)
     }
 }
+
+/**
+ * Gets the path to the raw data for the license file.
+ */
+public fun licensePath(lic: License): Path {
+    val path = "/licenses/${lic.name()}.txt"
+    val url = javaClass<ProjectRenderer>().getResource(path)
+    try {
+        return Paths.get(url.toURI())
+    } catch (e: NullPointerException) {
+        throw FileNotFoundException(path)
+    }
+}
+

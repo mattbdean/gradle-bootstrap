@@ -1,6 +1,5 @@
 apply plugin: 'kotlin'
 
-sourceCompatibility = 1.6
 version = '1.0'
 
 repositories {
@@ -11,7 +10,6 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     compile "org.apache.commons:commons-compress:1.8"
     compile "org.slf4j:slf4j-api:$slf4jVersion"
-    compile project(":shared-data")
     testCompile "org.slf4j:slf4j-simple:$slf4jVersion"
     testCompile "junit:junit:4.11"
 }

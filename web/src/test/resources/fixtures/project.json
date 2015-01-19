@@ -7,7 +7,7 @@
   "version": "1.0",
   "testing_framework": "testng",
   "logging_framework": "slf4j",
-  "license": "apache",
+  "license": "apache2",
   "languages": [
     "java",
     "kotlin"

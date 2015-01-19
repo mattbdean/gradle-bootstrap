@@ -29,7 +29,6 @@ import io.dropwizard.hibernate.HibernateBundle
 import net.dean.gbs.web.models.ProjectModel
 import org.joda.time.Duration
 import net.dean.gbs.web.db.DataAccessObject
-import kotlin.properties.Delegates
 import javax.servlet.http.HttpUtils
 import io.dropwizard.assets.AssetsBundle
 import net.dean.gbs.web.resources.IndexResource
