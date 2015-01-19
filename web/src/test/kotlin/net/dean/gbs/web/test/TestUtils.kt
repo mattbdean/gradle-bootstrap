@@ -24,7 +24,7 @@ public object TestUtils {
     private val version = "1.0"
     private val testing = TestingFramework.TESTNG
     private val logging = LoggingFramework.SLF4J
-    private val license = License.APACHE
+    private val license = License.APACHE2
     private val languages = listOf(Language.JAVA, Language.KOTLIN)
     private val created = DateTime(2000, 1, 1, 0, 0, GradleBootstrapConf.timeZone)
     private val uuid = UUID.fromString("f3b4d46c-e691-4c6b-b7c7-feed491d0dbd")
