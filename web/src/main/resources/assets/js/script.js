@@ -1,20 +1,7 @@
 
 $(function() {
 	$("#submit").click(function() {
-		var data = getProjectProperties()
-		$.ajax({
-			type: "POST",
-			url: "/project",
-			data: data,
-			contentType: "application/x-www-form-urlencoded",
-			success: function(data) {
-				console.log(data)
-			},
-			error: function(jqXHR) {
-				console.log(jqXHR)
-			}
-			// TODO: Error handling
-		})
+		submitProject();
 	});
 
 	var options = ["testing", "logging", "language", "license"];
@@ -25,6 +12,77 @@ $(function() {
 		}
 	});
 });
+
+/**
+ * Collects all the data from the form and submits it using POST /project
+ */
+function submitProject() {
+	var data = getProjectProperties()
+	$.ajax({
+		type: "POST",
+		url: "/project",
+		data: data,
+		contentType: "application/x-www-form-urlencoded",
+		success: function(data) {
+			watchForDownload(data)
+		},
+		error: function(jqXHR) {
+			handleSubmissionError(jqXHR)
+		}
+	})
+}
+
+/**
+ * Acts based on the project's status. If it is ready, then the project is downloaded. If "errored", then
+ * handleBuildError() will be invoked. If "enqueued" or "building", then a timeout will be created to call this method
+ * again with updated information
+ *
+ * @param project A project model
+ */
+function watchForDownload(project) {
+	switch (project.status) {
+		case "ready":
+			download(project);
+			return;
+		case "errored":
+			handleBuildError();
+			return;
+		case "enqueued":
+		case "building":
+			console.log("Creating timeout for 1sec in advance");
+			setTimeout(function() {
+				console.log("Submitting AJAX");
+				$.get("/project/" + project.id, function(updatedProject) {
+					watchForDownload(updatedProject)
+				}, 1000)
+			})
+	}
+}
+
+/**
+ * Downloads the given project
+ */
+function download(project) {
+	window.location.href = "/project/" + project.id + "/download";
+}
+
+/**
+ * Handles an event where project's status is "errored"
+ */
+function handleBuildError() {
+	// TODO: Error handling
+	console.log("Build errored")
+}
+
+/**
+ * Handles any errors returned from POST /project
+ * @param jqXHR The XHR used to send this AJAX request
+ */
+function handleSubmissionError(jqXHR) {
+	// TODO: Error handling
+	console.log(jqXHR);
+	console.error(jqXHR.responseJSON.why)
+}
 
 /**
  * Gets the keys and values from every div.property's input or select attribute. If a <select> is present and multiple

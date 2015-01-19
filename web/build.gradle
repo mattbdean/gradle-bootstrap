@@ -29,15 +29,10 @@ dependencies {
     compile "org.jadira.usertype:usertype.core:3.2.0.GA"
     compile project(':api')
     testCompile "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-
-    println "hello"
-    sourceSets.main.resources.getSrcDirs().each {
-        println it
-    }
 }
 
 dropwizard {
     mainClass = 'net.dean.gbs.web.GradleBootstrap'
-    dropwizardConfigFile = 'config/persistent.yml'
+    dropwizardConfigFile = 'config/embedded.yml'
 }
 
