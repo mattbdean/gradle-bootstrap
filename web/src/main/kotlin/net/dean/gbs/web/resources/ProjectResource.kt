@@ -14,29 +14,25 @@ import net.dean.gbs.api.models.License
 import javax.ws.rs.FormParam
 import net.dean.gbs.api.models.Project
 import java.util.UUID
-import net.dean.gbs.web.db.ProjectDao
 import kotlin.properties.Delegates
 import net.dean.gbs.web.Parameter
 import net.dean.gbs.web.ParamLocation
 import net.dean.gbs.web.models.ProjectModel
 import net.dean.gbs.web.GradleBootstrapConf
 import net.dean.gbs.web.models.BuildStatus
-import com.codahale.metrics.annotation.Timed
 import net.dean.gbs.web.ProjectBuilder
 import net.dean.gbs.web.db.DataAccessObject
 import net.dean.gbs.web.models.Model
-import javax.ws.rs.core.StreamingOutput
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.UriInfo
-import javax.ws.rs.QueryParam
 import io.dropwizard.hibernate.UnitOfWork
-import org.hibernate.context.internal.ManagedSessionContext
 import javax.ws.rs.core.Response
-import org.hibernate.SessionFactory
+import net.dean.gbs.api.models.HumanReadable
+import javax.ws.rs.QueryParam
 
-public trait Resource {
+public trait ModelResource {
     /**
      * Throws the given lazy-evaluated RequestException when [test] is true
      */
@@ -67,12 +63,12 @@ public trait Resource {
     /**
      * Asserts that the given string is one of the enum values in [allValues]
      *
-     * canBeNull: If true, then this method will [assertPresent] on the given parameter
+     * Returns the enum value of the given constant's name
      */
-    public fun assertStringIsEnumValue<T : Enum<T>>(param: Parameter<String>, allValues: Array<T>) {
+    public fun assertStringIsEnumValue<T : Enum<T>>(param: Parameter<String>, allValues: Array<T>): T {
         for (enumValue in allValues) {
             if ((param.value).equalsIgnoreCase(enumValue.name())) {
-                return
+                return enumValue
             }
         }
 
@@ -133,7 +129,7 @@ Path("/project")
 Produces(MediaType.APPLICATION_JSON)
 Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 public class ProjectResource(public val projectDao: DataAccessObject<ProjectModel>,
-                             private val builder: ProjectBuilder) : Resource {
+                             private val builder: ProjectBuilder) : ModelResource {
 
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
@@ -141,14 +137,6 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
     private val defaultTesting = TestingFramework.NONE.name()
     private val defaultLogging = LoggingFramework.NONE.name()
     private val defaultLicense = License.NONE.name()
-    public val options: List<String> = listOf(
-            "license",
-            "language",
-            "framework_testing",
-            "framework_logging"
-    )
-    // calculate this before hand to avoid calling toString() over and over again
-    public val optionsString: String by Delegates.lazy { options.toString() }
 
     /**
      * Creates a new project
@@ -168,11 +156,11 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
                            FormParam("testing") testing: String?,
                            FormParam("logging") logging: String?,
                            FormParam("license") license: String?,
-                           FormParam("languages") languages: String?): ProjectModel {
+                           FormParam("language") languages: String?): ProjectModel {
         // name, and group, and lang are required
         assertPresent(Parameter("name", name, ParamLocation.BODY, uriInfo),
                       Parameter("group", group, ParamLocation.BODY, uriInfo),
-                      Parameter("languages", languages, ParamLocation.BODY, uriInfo))
+                      Parameter("language", languages, ParamLocation.BODY, uriInfo))
 
         // Make sure that each language is supported
         for (lang in languages!!.split(',')) {
@@ -242,19 +230,29 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
     }
 
     Path("options")
-    GET public fun listOptions() : List<String> = ProjectOption.values().map { it.name().toLowerCase() }
+    GET public fun getOptions(Context uriInfo: UriInfo, QueryParam("values") option: String): Map<String, Map<String, String>> {
+        val param = Parameter("values", option, ParamLocation.URI, uriInfo)
+        if (param.value.isEmpty()) {
+            // No option provided, return all
+            return getOptions()
+        }
 
-    Path("options/{option}")
-    GET public fun getOption(Context uriInfo: UriInfo, PathParam("option") option: String): List<String> {
-        assertStringIsEnumValue(Parameter("option", option, ParamLocation.URI, uriInfo), ProjectOption.values())
-        return ProjectOption.valueOf(option.toUpperCase()).values
+        // Make sure each given option is an enum constant in ProjectOption
+        val options = option.split(',').map {
+            assertStringIsEnumValue(Parameter("option", it, ParamLocation.URI, uriInfo), ProjectOption.values())
+        }
+        return getOptions(options)
+    }
+
+    private fun getOptions(options: Iterable<ProjectOption> = ProjectOption.values().toArrayList()): Map<String, Map<String, String>> {
+        return hashMapOf(*options.map { it.name().toLowerCase() to it.values }.copyToArray())
     }
 }
 
-public enum class ProjectOption(public val values: List<String>) {
-    LICENSE: ProjectOption(License.values().map { it.name().toLowerCase() })
-    LANGUAGE: ProjectOption(Language.values().map { it.name().toLowerCase() })
-    FRAMEWORK_TESTING: ProjectOption(TestingFramework.values().map { it.name().toLowerCase() })
-    FRAMEWORK_LOGGING: ProjectOption(LoggingFramework.values().map { it.name().toLowerCase() })
+public enum class ProjectOption(public val values: Map<String, String>) {
+    LICENSE: ProjectOption(hashMapOf(*License.values().map { it.toString().toLowerCase() to it.humanReadable}.copyToArray()))
+    LANGUAGE: ProjectOption(hashMapOf(*Language.values().map { it.toString().toLowerCase() to it.humanReadable}.copyToArray()))
+    TESTING : ProjectOption(hashMapOf(*TestingFramework.values().map { it.toString().toLowerCase() to it.humanReadable}.copyToArray()))
+    LOGGING : ProjectOption(hashMapOf(*LoggingFramework.values().map { it.toString().toLowerCase() to it.humanReadable}.copyToArray()))
 }
 

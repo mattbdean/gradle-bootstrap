@@ -1,4 +1,3 @@
 rootProject.name = 'gradle-bootstrap'
-include 'api', 'web'
-include 'shared-data'
+include 'api', 'web', 'shared-data'
 

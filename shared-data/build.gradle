@@ -1,1 +1,5 @@
-// Nothing to do.
+// Apply 'java' so that we have access to sourceSets
+apply plugin: 'java'
+
+// Only resources dir is /shared-data/data
+sourceSets.main.resources.srcDir "data"

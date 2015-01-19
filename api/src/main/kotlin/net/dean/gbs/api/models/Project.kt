@@ -1,8 +1,6 @@
 package net.dean.gbs.api.models
 
 import java.util.HashSet
-import java.util.HashMap
-import java.util.EnumSet
 
 /**
  * Represents a Gradle project
@@ -34,10 +32,18 @@ public class Project(val name: String, val group: String, val version: String = 
 /**
  * A collection of languages that will be used in this project
  */
-public enum class Language : ModularGradleComponent {
-    JAVA {   override val dep: Dependency? = null }
-    GROOVY { override val dep: Dependency? = Dependency("org.codehaus.groovy", "grovy-all") }
-    SCALA {  override val dep: Dependency? = Dependency("org.scala-lang", "scala-library") }
+public enum class Language : ModularGradleComponent, HumanReadable {
+    JAVA {
+        override val dep: Dependency? = null
+    }
+    GROOVY {
+        override val dep: Dependency? = Dependency("org.codehaus.groovy", "grovy-all")
+    }
+
+    SCALA {
+        override val dep: Dependency? = Dependency("org.scala-lang", "scala-library")
+    }
+
     KOTLIN {
         override val dep: Dependency? = Dependency("org.jetbrains.kotlin", "kotlin-stdlib")
 
@@ -52,6 +58,7 @@ public enum class Language : ModularGradleComponent {
         }
     }
 
+    public override val humanReadable = name()[0] + name().substring(1).toLowerCase()
     public abstract val dep: Dependency?
     public override fun configureOnto(build: GradleBuild) {
         build.plugins.add(name().toLowerCase())
@@ -60,13 +67,24 @@ public enum class Language : ModularGradleComponent {
     }
 }
 
+public trait HumanReadable {
+    public val humanReadable: String
+}
+
 /**
  * The different licenses to choose from
  */
-public enum class License {
-    NONE
-    APACHE
-    GPL2
-    MIT
+public enum class License: HumanReadable {
+    NONE {
+        override val humanReadable = "None"
+    }
+    APACHE2 {
+        override val humanReadable = "Apache License 2.0"
+    }
+    GPL2 {
+        override val humanReadable = "GNU GPL v2.0"
+    }
+    MIT {
+        override val humanReadable = "MIT License"
+    }
 }
-

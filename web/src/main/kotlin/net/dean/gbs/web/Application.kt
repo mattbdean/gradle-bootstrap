@@ -31,6 +31,10 @@ import org.joda.time.Duration
 import net.dean.gbs.web.db.DataAccessObject
 import kotlin.properties.Delegates
 import javax.servlet.http.HttpUtils
+import io.dropwizard.assets.AssetsBundle
+import net.dean.gbs.web.resources.IndexResource
+import io.dropwizard.views.ViewMessageBodyWriter
+import io.dropwizard.views.freemarker.FreemarkerViewRenderer
 
 public class GradleBootstrap : Application<GradleBootstrapConf>() {
     class object {
@@ -45,8 +49,11 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
         }
     }
 
-    override fun initialize(bootstrap: Bootstrap<GradleBootstrapConf>?) {
-        bootstrap!!.addBundle(hibernate)
+    override fun initialize(bootstrap: Bootstrap<GradleBootstrapConf>) {
+        for (type in array("css", "js")) {
+            bootstrap.addBundle(AssetsBundle("/assets/$type", "/$type", null, type))
+        }
+        bootstrap.addBundle(hibernate)
     }
 
     override fun run(configuration: GradleBootstrapConf, environment: Environment) {
@@ -58,7 +65,13 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
         val projectDao: DataAccessObject<ProjectModel> = ProjectDao(sessionFactory)
         val projectBuilder = ProjectBuilder(projectDao, Paths.get(configuration.downloadDirectory), sessionFactory)
 
-        environment.jersey().register(ProjectResource(projectDao, projectBuilder))
+        array(
+                ProjectResource(projectDao, projectBuilder),
+                IndexResource(),
+                ViewMessageBodyWriter(environment.metrics(), listOf(FreemarkerViewRenderer()))
+        ).forEach {
+            environment.jersey().register(it)
+        }
     }
 }
 
@@ -78,7 +91,6 @@ public class GradleBootstrapConf : Configuration() {
 
         public platformStatic fun getCurrentDate(): DateTime = DateTime(timeZone)
         public platformStatic fun getPassExpirationDate(date: DateTime = getCurrentDate()): DateTime = date.plus(expirationDuration)
-        public var sessionFactory: GlobalSessionFactory by Delegates.notNull()
     }
 }
 
@@ -97,9 +109,5 @@ public provider class UnhandledExceptionLogger : ExceptionMapper<Throwable> {
         return Response.status(500)
                 .build()
     }
-}
-
-public object GlobalSessionFactory {
-
 }
 
