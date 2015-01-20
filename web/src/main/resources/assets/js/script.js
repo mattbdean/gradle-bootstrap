@@ -1,8 +1,10 @@
 
 $(function() {
 	$("#submit").click(function() {
+		clearErrors();
 		submitProject();
 	});
+
 
 	// Fill in each option
 	$.get("/project/options", function(data) {
@@ -14,6 +16,8 @@ $(function() {
 			addValues(option, data.enums[option], data.defaults[option]);
 			handledDefaults.push(option)
 		}
+		// Apply some style to <select>
+		$("select").chosen();
 
 		for (option in data.defaults) {
 			if (!data.defaults.hasOwnProperty(option)) {
@@ -43,6 +47,10 @@ function submitProject() {
 			handleSubmissionError(jqXHR)
 		}
 	})
+}
+
+function clearErrors() {
+	$("p.error").remove();
 }
 
 /**
@@ -94,7 +102,13 @@ function handleBuildError() {
 function handleSubmissionError(jqXHR) {
 	// TODO: Error handling
 	console.log(jqXHR);
-	console.error(jqXHR.responseJSON.why)
+	var paramName = jqXHR.responseJSON.param.name;
+	var why = jqXHR.responseJSON.websiteWhy;
+	$("div.property[data-name=" + paramName + "]").first().append(makeErrorHtml(why))
+}
+
+function makeErrorHtml(why) {
+	return "<p class=\"error\">" + why + "</p>"
 }
 
 /**

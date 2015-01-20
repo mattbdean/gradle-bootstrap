@@ -24,6 +24,7 @@ public enum class ErrorCode {
  */
 public data class JsonError(public val error: ErrorCode,
                             public val why: String,
+                            public val websiteWhy: String = why,
                             public val param: Parameter<*>,
                             public val path: String)
 
@@ -38,12 +39,14 @@ public data class JsonError(public val error: ErrorCode,
  */
 public open class RequestException(errorId: ErrorCode,
                                    why: String,
+                                   websiteWhy: String = why,
                                    status: Int,
                                    public val param: Parameter<*>) : WebApplicationException(
         Response.status(status)
                 .entity(JsonError(path = param.uri,
                         error = errorId,
                         why = why,
+                        websiteWhy = websiteWhy,
                         param = param))
                 .type(MediaType.APPLICATION_JSON)
                 .build()) {
@@ -59,9 +62,11 @@ public open class RequestException(errorId: ErrorCode,
  */
 public abstract class MalformedParameterException(errorId: ErrorCode,
                                                   why: String,
+                                                  websiteWhy: String = why,
                                                   param: Parameter<*>) : RequestException (
         errorId = errorId,
         why = why,
+        websiteWhy = websiteWhy,
         status = 422, // 422 Unprocessable Entity
         param = param
 )
@@ -72,6 +77,7 @@ public abstract class MalformedParameterException(errorId: ErrorCode,
 public class MissingRequiredParamException(param: Parameter<*>) : MalformedParameterException(
                 errorId = ErrorCode.MISSING_PARAM,
                 why = "Missing or empty value for ${RequestException.formatParam(param)}",
+                websiteWhy = "Please enter a value",
                 param = param
         )
 

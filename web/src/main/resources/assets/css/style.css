@@ -1,5 +1,92 @@
 section label {
 	display: inline-block;
-	width: 80px;
+	width: 100px;
+	margin-right: 10px;
 	text-align: right;
+}
+
+body {
+	width: 480px;
+	margin: 0 auto;
+	font-family: 'Lato', sans-serif;
+	background-color: #f0f0f0;
+}
+
+h1, h2 {
+	font-family: 'Slabo 27px', serif;
+}
+
+h1 {
+	font-size: 56px;
+}
+
+h2 {
+	font-size: 27px;
+}
+
+div.property {
+	margin: 8px 10px;
+}
+
+section {
+	background-color: #f8f8f8;
+	padding: 10px;
+	border: dashed #cecece;
+	border-radius: 10px;
+}
+
+#title {
+	margin-bottom: 0;
+}
+
+#slogan {
+	margin-top: 0;
+	font-weight: normal;
+}
+
+input, select {
+	width: 250px;
+}
+
+input {
+	padding: 3px;
+	font-family: 'Lato', sans-serif;
+}
+
+input.code {
+	font-family: 'Ubuntu Mono', monospace;
+	font-size: 16px;
+}
+
+#submit {
+	display: block;
+	text-align: center;
+	margin: 30px auto;
+	text-decoration: none;
+}
+
+.btn {
+	border-radius: 12px;
+	text-shadow: 1px 1px 3px #454545;
+	box-shadow: 0 1px 3px #666666;
+	color: #ffffff;
+	font-size: 24px;
+	background: #006532;
+	padding: 10px 20px 10px 20px;
+	text-decoration: none;
+}
+
+label {
+	font-size: 16px;
+}
+
+.btn:hover {
+	background: #82b816;
+	text-decoration: none;
+}
+
+p.error {
+	margin: 0;
+	text-align: center;
+	color: #c62d2d;
 }

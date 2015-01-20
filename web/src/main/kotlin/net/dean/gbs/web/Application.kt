@@ -34,6 +34,9 @@ import io.dropwizard.assets.AssetsBundle
 import net.dean.gbs.web.resources.IndexResource
 import io.dropwizard.views.ViewMessageBodyWriter
 import io.dropwizard.views.freemarker.FreemarkerViewRenderer
+import javax.ws.rs.container.ContainerResponseFilter
+import javax.ws.rs.container.ContainerRequestContext
+import javax.ws.rs.container.ContainerResponseContext
 
 public class GradleBootstrap : Application<GradleBootstrapConf>() {
     class object {
@@ -67,7 +70,9 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
         array(
                 ProjectResource(projectDao, projectBuilder),
                 IndexResource(),
-                ViewMessageBodyWriter(environment.metrics(), listOf(FreemarkerViewRenderer()))
+                ViewMessageBodyWriter(environment.metrics(), listOf(FreemarkerViewRenderer())),
+                UnhandledExceptionLogger(),
+                HeaderFilter()
         ).forEach {
             environment.jersey().register(it)
         }
@@ -110,3 +115,15 @@ public provider class UnhandledExceptionLogger : ExceptionMapper<Throwable> {
     }
 }
 
+public provider class HeaderFilter : ContainerResponseFilter {
+    class object {
+        private val headers = listOf(
+                "X-Frame-Options" to "deny",
+                "X-Content-Type-Options" to "nosniff"
+        )
+    }
+    override fun filter(requestContext: ContainerRequestContext, responseContext: ContainerResponseContext) {
+        for ((key, value) in headers)
+            responseContext.getHeaders().add(key, value)
+    }
+}
