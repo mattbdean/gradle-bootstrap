@@ -1,3 +1,12 @@
+* {
+	margin: 0;
+}
+
+html, body {
+	margin: 0;
+	height: 100%;
+}
+
 section label {
 	display: inline-block;
 	width: 100px;
@@ -12,8 +21,30 @@ body {
 	background-color: #f0f0f0;
 }
 
+#content-wrapper {
+	min-height: 100%;
+	/* Same as footer height */
+	margin-bottom: -60px;
+}
+
+#content-wrapper:after {
+	content: "";
+	display: block;
+}
+
+footer, #content-wrapper:after {
+	height: 60px;
+}
+
+footer {
+	text-align: center;
+	color: #444444;
+}
+
 h1, h2 {
 	font-family: 'Slabo 27px', serif;
+	padding-top: 20px;
+	padding-bottom: 10px;
 }
 
 h1 {
@@ -26,6 +57,10 @@ h2 {
 
 div.property {
 	margin: 8px 10px;
+}
+
+p {
+	padding: 3px;
 }
 
 section {

@@ -65,5 +65,8 @@
     </div>
     <a id="submit" class="btn" href="javascript:void(0)">Create</a>
 </div>
+<footer>
+    <p>Copyright &copy; Matthew Dean 2014</p>
+</footer>
 </body>
 </html>
