@@ -163,6 +163,19 @@ public trait ModelResource {
     }
 
     /**
+     * Returns true if and only if the given parameter's value is equal to "true" (case insensitive)
+     */
+    public fun assertBoolean(param: Parameter<String?>): Boolean {
+        if (param.value == null) {
+            return false
+        }
+
+        if (param.value!!.toLowerCase() == "true")
+            return true
+        return false
+    }
+
+    /**
      * Returns [param] if it is non-null or [alt] otherwise
      */
     public fun alternative<T>(param: T, alt: T): T = param ?: alt
@@ -196,6 +209,7 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
                            FormParam("logging") logging: String?,
                            FormParam("license") license: String?,
                            FormParam("language") languages: String?,
+                           FormParam("git_init") gitInit: String?,
                            FormParam("git_url") gitUrl: String?): ProjectModel {
         // name, and group, and lang are required
         val nameParam = Parameter("name", name, ParamLocation.BODY, uriInfo)
@@ -218,11 +232,15 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
         val effectiveVersion = alternative(version, ProjectModel.DEFAULT_VERSION)!!
         validateVersion(Parameter("version", effectiveVersion, ParamLocation.BODY, uriInfo))
 
-        val gitParam = Parameter("git_url", gitUrl, ParamLocation.BODY, uriInfo)
-        val gitUpstream = assertGitRepoUrl(gitParam)
+        val gitUrlParam = Parameter("git_url", gitUrl, ParamLocation.BODY, uriInfo)
+        val gitUpstream = assertGitRepoUrl(gitUrlParam)
+
+        // Initialize the git repo if git_url was specified OR git_init was equal to "true"
+        val gitInitParam = Parameter("git_init", gitInit, ParamLocation.BODY, uriInfo)
+        val gitInitBool: Boolean = gitUpstream != null || assertBoolean(gitInitParam)
 
         // Create a project
-        val proj = Project(name!!, group!!, effectiveVersion, gitUpstream, languages.split(",").map { Language.valueOf(it.toUpperCase())} )
+        val proj = Project(name!!, group!!, effectiveVersion, gitUpstream, gitInitBool, languages.split(",").map { Language.valueOf(it.toUpperCase())} )
 
         // Choose an alternative before evaluating the string because enum evaluation requires a fully upper case input,
         // which must be provided by calling testing!!.toUpperCase(). If testing was null, it would throw an exception

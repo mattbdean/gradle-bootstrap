@@ -67,7 +67,7 @@ public class CreationTest {
             testZip(proj, root)
         validateGradleBuild(root)
 
-        if (proj.git)
+        if (proj.gitInit)
             validateGit(root)
     }
 
@@ -112,7 +112,7 @@ public class CreationTest {
      */
     private fun newProject(name: String, lang: Language): Pair<Project, Path> {
         val path = Paths.get("build/projects/normal/$name")
-        val proj = Project(name, "com.example.$name", "0.1", upstreamUrl, setOf(lang))
+        val proj = Project(name, "com.example.$name", "0.1", gitRepo = upstreamUrl, languages = setOf(lang))
         // Delete the files before generating it so that if we want to examine the crated files after creation, we can.
         delete(path)
         return proj to path

@@ -9,14 +9,14 @@ public class Project(val name: String,
                      val group: String,
                      val version: String,
                      val gitRepo: String?,
+                     val gitInit: Boolean = gitRepo != null,
                      languages: Collection<Language>) {
     /** Set of directories to create */
     public val directoriesToCreate: MutableSet<String> = HashSet()
     public var license: License = License.NONE
     /** Represents the conceptual build.gradle file for this project */
     public val build: GradleBuild = GradleBuild()
-    public val languages: Set<Language> = HashSet(languages)
-    public val git: Boolean = gitRepo != null
+    public val languages: Set<Language> = HashSet(languages);
 
     {
         if (languages.size() == 0)

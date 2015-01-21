@@ -156,7 +156,12 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
 
     /** Creates a Project out of the given ProjectModel */
     private fun toProject(model: ProjectModel): Project {
-        val proj = Project(model.getName()!!, model.getGroup()!!, model.getVersion()!!, model.getGitUrl(), model.getLanguages().map { Language.valueOf(it.toUpperCase()) })
+        val proj = Project(model.getName()!!,
+                model.getGroup()!!,
+                model.getVersion()!!,
+                model.getGit().getUrl(),
+                model.getGit().isInit(),
+                model.getLanguages().map { Language.valueOf(it.toUpperCase()) })
         if (model.getTestingFramework() != null) proj.build.testing = TestingFramework.valueOf(model.getTestingFramework()!!.toUpperCase())
         if (model.getLoggingFramework() != null) proj.build.logging = LoggingFramework.valueOf(model.getLoggingFramework()!!.toUpperCase())
         if (model.getLicense() != null) proj.license = License.valueOf(model.getLicense()!!.toUpperCase())

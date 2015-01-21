@@ -9,8 +9,10 @@ import net.dean.gbs.api.models.Project;
 import net.dean.gbs.api.models.TestingFramework;
 import org.joda.time.DateTime;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
@@ -56,8 +58,8 @@ public final class ProjectModel extends Model {
     @Column(name = "status")
     private String status;
 
-    @Column(name = "git_url")
-    private String gitUrl;
+    @OneToOne(cascade = CascadeType.ALL)
+    private GitProperties git;
 
     public ProjectModel() {
         super();
@@ -66,12 +68,12 @@ public final class ProjectModel extends Model {
 
     public ProjectModel(DateTime createdAt, DateTime updatedAt, String name, String group, String version,
                         TestingFramework testingFramework, LoggingFramework loggingFramework, License license,
-                        Set<Language> languages, BuildStatus status, String gitUrl) {
+                        Set<Language> languages, BuildStatus status, GitProperties git) {
         super(createdAt, updatedAt);
         this.name = name;
         this.group = group;
         this.version = version;
-        this.gitUrl = gitUrl;
+        this.git = git;
         setTestingFramework(testingFramework);
         setLoggingFramework(loggingFramework);
         setLicense(license);
@@ -90,7 +92,7 @@ public final class ProjectModel extends Model {
                 project.getLicense(),
                 project.getLanguages(),
                 status,
-                project.getGitRepo());
+                new GitProperties(project.getGitInit(), project.getGitRepo()));
     }
 
     @JsonProperty("name")
@@ -138,9 +140,9 @@ public final class ProjectModel extends Model {
         return status;
     }
 
-    @JsonProperty("git_url")
-    public String getGitUrl() {
-        return gitUrl;
+    @JsonProperty("git")
+    public GitProperties getGit() {
+        return git;
     }
 
     public void setName(String name) {
@@ -179,8 +181,8 @@ public final class ProjectModel extends Model {
         this.status = status.name().toLowerCase();
     }
 
-    public void setGitUrl(String gitUrl) {
-        this.gitUrl = gitUrl;
+    public void setGit(GitProperties git) {
+        this.git = git;
     }
 }
 

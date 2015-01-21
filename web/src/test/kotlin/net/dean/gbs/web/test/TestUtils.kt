@@ -31,7 +31,7 @@ public object TestUtils {
     private val gitUrl: String = "https://github.com/example/example"
 
     public platformStatic fun newProject(): Project {
-        val proj = Project(name, group, version, gitUrl, languages)
+        val proj = Project(name, group, version, gitUrl, true, languages)
         proj.build.testing = testing
         proj.build.logging = logging
         proj.license = license

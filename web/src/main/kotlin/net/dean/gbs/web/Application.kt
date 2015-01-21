@@ -34,9 +34,7 @@ import io.dropwizard.assets.AssetsBundle
 import net.dean.gbs.web.resources.IndexResource
 import io.dropwizard.views.ViewMessageBodyWriter
 import io.dropwizard.views.freemarker.FreemarkerViewRenderer
-import javax.ws.rs.container.ContainerResponseFilter
-import javax.ws.rs.container.ContainerRequestContext
-import javax.ws.rs.container.ContainerResponseContext
+import net.dean.gbs.web.models.GitProperties
 
 public class GradleBootstrap : Application<GradleBootstrapConf>() {
     class object {
@@ -45,7 +43,7 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
         }
     }
 
-    val hibernate = object: HibernateBundle<GradleBootstrapConf>(javaClass<ProjectModel>()) {
+    val hibernate = object: HibernateBundle<GradleBootstrapConf>(javaClass<ProjectModel>(), javaClass<GitProperties>()) {
         override fun getDataSourceFactory(configuration: GradleBootstrapConf?): DataSourceFactory? {
             return configuration!!.database
         }
