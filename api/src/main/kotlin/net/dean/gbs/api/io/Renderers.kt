@@ -109,6 +109,12 @@ public class ProjectRenderer(private val basePath: Path) : FileSetRenderer<Proje
             fileWrites.add(licenseDest)
         }
 
+
+        ///// README.md /////
+        gen.init("README.md")
+        gen.statement("#${obj.name}")
+        gen.close()
+
         fileWrites.addAll(gen.history)
 
         if (obj.gitInit) {
