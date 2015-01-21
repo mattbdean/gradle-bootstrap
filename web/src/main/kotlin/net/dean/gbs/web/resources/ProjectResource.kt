@@ -32,8 +32,8 @@ import net.dean.gbs.api.models.HumanReadable
 import net.dean.gbs.web.models.Constraints
 import java.util.regex.Pattern
 import net.dean.gbs.web.models.ProjectOptionModel
-import java.net.URL
-import java.net.MalformedURLException
+import java.net.URISyntaxException
+import java.net.URI
 
 public trait ModelResource {
     /**
@@ -93,7 +93,7 @@ public trait ModelResource {
         assertPresent(param)
 
         val uuid = param.value
-        val initException = { InvalidParamException("No resource could be found by that ID", ErrorCode.MALFORMED_UUID, param) }
+        val initException = { InvalidParamException("No resource could be found by that ID", ErrorCode.MALFORMED_UUID, param = param) }
 
         try {
             // http://stackoverflow.com/a/10693997/1275092
@@ -142,9 +142,9 @@ public trait ModelResource {
         if (upstream.value == null)
             return null
         try {
-            val url = URL(upstream.value!!)
+            val uri = URI(upstream.value!!)
             val acceptableProtocols = array("git", "http", "https")
-            if (url.getProtocol() !in acceptableProtocols) {
+            if (uri.getScheme() !in acceptableProtocols) {
                 throw InvalidParamException(
                         why = "Only acceptable schemes are ${acceptableProtocols.join(", ")}",
                         errorId = ErrorCode.BAD_GIT_URL,
@@ -152,10 +152,11 @@ public trait ModelResource {
                 )
             }
 
-            return url.toString()
-        } catch (e: MalformedURLException) {
+            return uri.toString()
+        } catch (e: URISyntaxException) {
             throw InvalidParamException(
                     why = "Malformed URL",
+                    websiteWhy = "That URL doesn't seem to be valid",
                     errorId = ErrorCode.MALFORMED_URL,
                     param = upstream
             )

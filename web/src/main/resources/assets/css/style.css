@@ -7,13 +7,6 @@ html, body {
 	height: 100%;
 }
 
-section label {
-	display: inline-block;
-	width: 100px;
-	margin-right: 10px;
-	text-align: right;
-}
-
 body {
 	width: 480px;
 	margin: 0 auto;
@@ -79,18 +72,35 @@ section {
 	font-weight: normal;
 }
 
-input, select {
+input[type=text], select {
 	width: 250px;
+}
+
+input[type=checkbox] {
+	margin-left: 90px;
 }
 
 input {
 	padding: 3px;
 	font-family: 'Lato', sans-serif;
+	font-size: 16px;
 }
 
 input.code {
 	font-family: 'Ubuntu Mono', monospace;
-	font-size: 16px;
+}
+
+section .checkbox-label {
+	/* Reset width from "section label" */
+	width: auto;
+	margin-left: 8px;
+}
+
+section label {
+	display: inline-block;
+	margin-right: 10px;
+	width: 100px;
+	text-align: right;
 }
 
 #submit {

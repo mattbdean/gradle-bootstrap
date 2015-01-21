@@ -88,9 +88,11 @@ public class MissingRequiredParamException(param: Parameter<*>) : MalformedParam
  */
 public class InvalidParamException(why: String,
                                    errorId: ErrorCode,
+                                   websiteWhy: String = why,
                                    param: Parameter<*>) : MalformedParameterException(
                 errorId = errorId,
                 why = why,
+                websiteWhy = websiteWhy,
                 param = param
         )
 

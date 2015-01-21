@@ -63,12 +63,25 @@
                     <select id="logging"></select>
                 </div>
             </section>
+
+            <h2>Integration</h2>
+            <section id="section-integration">
+                <div class="property" data-name="git_init">
+                    <input type="checkbox" id="git_init">
+                    <label for="git_init" class="checkbox-label">Initialize a Git repo</label>
+                </div>
+
+                <div class="property" data-name="git_url" data-depends-on="git_init">
+                    <label for="git_url">Git repo</label>
+                    <input type="text" id="git_url">
+                </div>
+            </section>
         </div>
         <a id="submit" class="btn" href="javascript:void(0)">Create</a>
     </div>
 </div>
 <footer>
-    <p>Copyright &copy; Matthew Dean 2015</p>
+    <p>Copyright &copy; Matthew Dean 2015. All rights reserved.</p>
     <p>Source code is available at <a href="https://github.com/thatJavaNerd/gradle-bootstrap">thatJavaNerd/gradle-bootstrap</a></p>
 </footer>
 </body>

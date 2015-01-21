@@ -5,6 +5,12 @@ $(function() {
 		submitProject();
 	});
 
+	$("input[type='checkbox']").change(function() {
+		// Refresh dependencies on checkbox click
+		refreshDependencies();
+	});
+
+	refreshDependencies();
 
 	// Fill in each option
 	$.get("/project/options", function(data) {
@@ -30,6 +36,25 @@ $(function() {
 		}
 	});
 });
+
+function refreshDependencies() {
+	var depAttr = "data-depends-on";
+
+	$(".property[" + depAttr + "]").each(function() {
+		var name = $(this).attr(depAttr);
+		var propertyInput = $("input[id=" + name + "]");
+		if (propertyInput.attr("type") !== "checkbox") {
+			console.log("Property " + propertyInput + " was not a checkbox");
+			return;
+		}
+
+		var enabled = false;
+		if (propertyInput.is(":checked")) {
+			enabled = true;
+		}
+		$(this).children("input[type=text]").first().prop("disabled", !enabled);
+	});
+}
 
 /**
  * Collects all the data from the form and submits it using POST /project
@@ -104,11 +129,15 @@ function handleSubmissionError(jqXHR) {
 	console.log(jqXHR);
 	var paramName = jqXHR.responseJSON.param.name;
 	var why = jqXHR.responseJSON.websiteWhy;
-	$("div.property[data-name=" + paramName + "]").first().append(makeErrorHtml(why))
+	appendError(paramName, why)
 }
 
-function makeErrorHtml(why) {
-	return "<p class=\"error\">" + why + "</p>"
+function appendError(name, error) {
+	$("div.property[data-name=" + name + "]").first().append(makeErrorHtml(error))
+}
+
+function makeErrorHtml(error) {
+	return "<p class=\"error\">" + error + "</p>"
 }
 
 /**
