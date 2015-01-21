@@ -121,5 +121,4 @@ class ZipBodyReader(private val directory: Path) : MessageBodyReader<Path> {
         Files.copy(entityStream, file)
         return file
     }
-
 }
