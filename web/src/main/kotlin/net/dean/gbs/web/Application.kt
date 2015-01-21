@@ -68,11 +68,13 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
         val projectBuilder = ProjectBuilder(projectDao, Paths.get(configuration.downloadDirectory), sessionFactory)
 
         array(
+                // Resources
                 ProjectResource(projectDao, projectBuilder),
                 IndexResource(),
+                // MessageBodyWriters
                 ViewMessageBodyWriter(environment.metrics(), listOf(FreemarkerViewRenderer())),
-                UnhandledExceptionLogger(),
-                HeaderFilter()
+                // ExceptionMappers
+                UnhandledExceptionLogger()
         ).forEach {
             environment.jersey().register(it)
         }
@@ -115,15 +117,3 @@ public provider class UnhandledExceptionLogger : ExceptionMapper<Throwable> {
     }
 }
 
-public provider class HeaderFilter : ContainerResponseFilter {
-    class object {
-        private val headers = listOf(
-                "X-Frame-Options" to "deny",
-                "X-Content-Type-Options" to "nosniff"
-        )
-    }
-    override fun filter(requestContext: ContainerRequestContext, responseContext: ContainerResponseContext) {
-        for ((key, value) in headers)
-            responseContext.getHeaders().add(key, value)
-    }
-}
