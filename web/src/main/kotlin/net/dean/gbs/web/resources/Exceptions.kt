@@ -10,10 +10,12 @@ import javax.ws.rs.core.UriInfo
  * Reasons why a request did not succeed
  */
 public enum class ErrorCode {
+    BAD_GIT_URL
     BAD_LENGTH
     DOWNLOAD_NOT_READY
     INVALID_IDENTIFIER
     MALFORMED_UUID
+    MALFORMED_URL
     MISSING_PARAM
     NOT_ENUM_VALUE
     NOT_FOUND

@@ -18,13 +18,14 @@ import net.dean.gbs.api.io.relativePath
 import net.dean.gbs.api.io.ZipHelper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder
+import kotlin.test.assertEquals
 
 public class CreationTest {
     private val processLogger = ProcessOutputAdapter()
     private var renderer: ProjectRenderer by Delegates.notNull()
     private val log: Logger = LoggerFactory.getLogger(javaClass)
+    private val upstreamUrl = "https://github.com/example/example"
 
     public test fun testSignificantPermutations() {
         // Testing framework: NONE vs TESTNG vs <any other>
@@ -65,6 +66,15 @@ public class CreationTest {
         if (zip)
             testZip(proj, root)
         validateGradleBuild(root)
+
+        if (proj.git)
+            validateGit(root)
+    }
+
+    private fun validateGit(rootPath: Path) {
+        val repo = FileRepositoryBuilder.create(relativePath(rootPath, ".git").toFile())
+        val config = repo.getConfig()
+        assertEquals(upstreamUrl, config.getString("remote", "origin", "url"))
     }
 
     /**
@@ -102,7 +112,7 @@ public class CreationTest {
      */
     private fun newProject(name: String, lang: Language): Pair<Project, Path> {
         val path = Paths.get("build/projects/normal/$name")
-        val proj = Project(name, "com.example.$name", languages = setOf(lang))
+        val proj = Project(name, "com.example.$name", "0.1", upstreamUrl, setOf(lang))
         // Delete the files before generating it so that if we want to examine the crated files after creation, we can.
         delete(path)
         return proj to path

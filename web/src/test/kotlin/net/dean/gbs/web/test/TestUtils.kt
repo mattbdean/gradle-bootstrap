@@ -28,9 +28,10 @@ public object TestUtils {
     private val languages = listOf(Language.JAVA, Language.KOTLIN)
     private val created = DateTime(2000, 1, 1, 0, 0, GradleBootstrapConf.timeZone)
     private val uuid = UUID.fromString("f3b4d46c-e691-4c6b-b7c7-feed491d0dbd")
+    private val gitUrl: String = "https://github.com/example/example"
 
     public platformStatic fun newProject(): Project {
-        val proj = Project(name, group, version, languages)
+        val proj = Project(name, group, version, gitUrl, languages)
         proj.build.testing = testing
         proj.build.logging = logging
         proj.license = license

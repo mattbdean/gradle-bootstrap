@@ -14,7 +14,7 @@ public class FixtureTest {
         GradleBootstrapConf.configureObjectMapper(mapper)
     }
 
-    public test fun testPersonFixture() {
+    public test fun testProjectFixture() {
         val expected = TestUtils.newProjectModel()
         val actual = mapper.readValue(FixtureHelpers.fixture("fixtures/project.json"), javaClass<ProjectModel>())
 

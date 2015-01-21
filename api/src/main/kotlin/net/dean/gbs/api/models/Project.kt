@@ -5,13 +5,18 @@ import java.util.HashSet
 /**
  * Represents a Gradle project
  */
-public class Project(val name: String, val group: String, val version: String = "0.0.1", languages: Collection<Language>) {
+public class Project(val name: String,
+                     val group: String,
+                     val version: String,
+                     val gitRepo: String?,
+                     languages: Collection<Language>) {
     /** Set of directories to create */
     public val directoriesToCreate: MutableSet<String> = HashSet()
     public var license: License = License.NONE
     /** Represents the conceptual build.gradle file for this project */
     public val build: GradleBuild = GradleBuild()
-    public val languages: Set<Language> = HashSet(languages);
+    public val languages: Set<Language> = HashSet(languages)
+    public val git: Boolean = gitRepo != null
 
     {
         if (languages.size() == 0)
@@ -40,15 +45,15 @@ public enum class Language : ModularGradleComponent, HumanReadable {
         override val dep: Dependency? = null
     }
     GROOVY {
-        override val dep: Dependency? = Dependency("org.codehaus.groovy", "grovy-all")
+        override val dep: Dependency = Dependency("org.codehaus.groovy", "grovy-all")
     }
 
     SCALA {
-        override val dep: Dependency? = Dependency("org.scala-lang", "scala-library")
+        override val dep: Dependency = Dependency("org.scala-lang", "scala-library")
     }
 
     KOTLIN {
-        override val dep: Dependency? = Dependency("org.jetbrains.kotlin", "kotlin-stdlib")
+        override val dep: Dependency = Dependency("org.jetbrains.kotlin", "kotlin-stdlib")
 
         override fun configureOnto(build: GradleBuild) {
             // See http://kotlinlang.org/docs/reference/using-gradle.html#configuring-dependencies
@@ -57,7 +62,7 @@ public enum class Language : ModularGradleComponent, HumanReadable {
             build.plugins.add("kotlin")
 
             build.projectContext.add(Repository.MAVEN_CENTRAL)
-            build.projectContext.add(dep!!)
+            build.projectContext.add(dep)
         }
     }
 

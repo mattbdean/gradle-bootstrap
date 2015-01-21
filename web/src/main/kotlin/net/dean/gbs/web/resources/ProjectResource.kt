@@ -31,8 +31,9 @@ import javax.ws.rs.core.Response
 import net.dean.gbs.api.models.HumanReadable
 import net.dean.gbs.web.models.Constraints
 import java.util.regex.Pattern
-import com.fasterxml.jackson.annotation.JsonValue
 import net.dean.gbs.web.models.ProjectOptionModel
+import java.net.URL
+import java.net.MalformedURLException
 
 public trait ModelResource {
     /**
@@ -84,8 +85,7 @@ public trait ModelResource {
      * Asserts that the given parameter is:
      *
      * 1. Present (assertPresent)
-     * 2. param.value is a String
-     * 3. param.value is a valid UUID
+     * 2. param.value is a valid UUID
      *
      * Returns a valid java.util.UUID if and only if all of the above is true.
      */
@@ -138,6 +138,30 @@ public trait ModelResource {
         throwWhenTrue(!regex.matcher(value).matches(), createException)
     }
 
+    public fun assertGitRepoUrl(upstream: Parameter<String?>): String? {
+        if (upstream.value == null)
+            return null
+        try {
+            val url = URL(upstream.value!!)
+            val acceptableProtocols = array("git", "http", "https")
+            if (url.getProtocol() !in acceptableProtocols) {
+                throw InvalidParamException(
+                        why = "Only acceptable schemes are ${acceptableProtocols.join(", ")}",
+                        errorId = ErrorCode.BAD_GIT_URL,
+                        param = upstream
+                )
+            }
+
+            return url.toString()
+        } catch (e: MalformedURLException) {
+            throw InvalidParamException(
+                    why = "Malformed URL",
+                    errorId = ErrorCode.MALFORMED_URL,
+                    param = upstream
+            )
+        }
+    }
+
     /**
      * Returns [param] if it is non-null or [alt] otherwise
      */
@@ -158,11 +182,11 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
      *
      * name: Project's name. Required.
      * group: Project's group/package. Required.
-     * version: Project's version. Defaults to 0.0.1
+     * version: Project's version.
      * testing: Testing framework. Must be one of the values in [TestingFramework].
      * logging: Logging framework. Must be one of the values in [LoggingFramework].
      * license: Project's license. Must be one of the values in [License].
-     * languages: Comma-separated list of zero or more values in [Language].
+     * language: Comma-separated list of zero or more values in [Language].
      */
     POST public fun createProject(Context uriInfo: UriInfo,
                            FormParam("name") name: String?,
@@ -171,7 +195,8 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
                            FormParam("testing") testing: String?,
                            FormParam("logging") logging: String?,
                            FormParam("license") license: String?,
-                           FormParam("language") languages: String?): ProjectModel {
+                           FormParam("language") languages: String?,
+                           FormParam("git_url") gitUrl: String?): ProjectModel {
         // name, and group, and lang are required
         val nameParam = Parameter("name", name, ParamLocation.BODY, uriInfo)
         val groupParam = Parameter("group", group, ParamLocation.BODY, uriInfo)
@@ -193,8 +218,11 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
         val effectiveVersion = alternative(version, ProjectModel.DEFAULT_VERSION)!!
         validateVersion(Parameter("version", effectiveVersion, ParamLocation.BODY, uriInfo))
 
+        val gitParam = Parameter("git_url", gitUrl, ParamLocation.BODY, uriInfo)
+        val gitUpstream = assertGitRepoUrl(gitParam)
+
         // Create a project
-        val proj = Project(name!!, group!!, effectiveVersion, languages.split(",").map { Language.valueOf(it.toUpperCase())} )
+        val proj = Project(name!!, group!!, effectiveVersion, gitUpstream, languages.split(",").map { Language.valueOf(it.toUpperCase())} )
 
         // Choose an alternative before evaluating the string because enum evaluation requires a fully upper case input,
         // which must be provided by calling testing!!.toUpperCase(). If testing was null, it would throw an exception

@@ -46,6 +46,6 @@ public class ProjectConfigTest {
         if (langs.isEmpty())
             throw IllegalArgumentException("Must have more than one language")
 
-        return Project("test-proj", "com.example.app", languages = setOf(*langs))
+        return Project("test-proj", "com.example.app", version = "0.1", languages = setOf(*langs), gitRepo = "https://github.com/example/example")
     }
 }

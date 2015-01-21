@@ -56,6 +56,9 @@ public final class ProjectModel extends Model {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "git_url")
+    private String gitUrl;
+
     public ProjectModel() {
         super();
         // JSON serialization
@@ -63,11 +66,12 @@ public final class ProjectModel extends Model {
 
     public ProjectModel(DateTime createdAt, DateTime updatedAt, String name, String group, String version,
                         TestingFramework testingFramework, LoggingFramework loggingFramework, License license,
-                        Set<Language> languages, BuildStatus status) {
+                        Set<Language> languages, BuildStatus status, String gitUrl) {
         super(createdAt, updatedAt);
         this.name = name;
         this.group = group;
         this.version = version;
+        this.gitUrl = gitUrl;
         setTestingFramework(testingFramework);
         setLoggingFramework(loggingFramework);
         setLicense(license);
@@ -85,7 +89,8 @@ public final class ProjectModel extends Model {
                 project.getBuild().getLogging(),
                 project.getLicense(),
                 project.getLanguages(),
-                status);
+                status,
+                project.getGitRepo());
     }
 
     @JsonProperty("name")
@@ -133,6 +138,11 @@ public final class ProjectModel extends Model {
         return status;
     }
 
+    @JsonProperty("git_url")
+    public String getGitUrl() {
+        return gitUrl;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -167,6 +177,10 @@ public final class ProjectModel extends Model {
 
     public void setStatus(BuildStatus status) {
         this.status = status.name().toLowerCase();
+    }
+
+    public void setGitUrl(String gitUrl) {
+        this.gitUrl = gitUrl;
     }
 }
 

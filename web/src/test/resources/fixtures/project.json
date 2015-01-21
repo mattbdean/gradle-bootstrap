@@ -12,5 +12,6 @@
     "java",
     "kotlin"
   ],
-  "status": "enqueued"
+  "status": "enqueued",
+  "git_url": "https://github.com/example/example"
 }

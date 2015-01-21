@@ -111,6 +111,10 @@ public class ProjectRenderer(private val basePath: Path) : FileSetRenderer<Proje
 
         fileWrites.addAll(gen.history)
 
+        if (obj.git) {
+            GitHelper.initialize(basePath, obj.gitRepo!!)
+        }
+
         return RenderReport(fileWrites, directoryCreations)
     }
 }
