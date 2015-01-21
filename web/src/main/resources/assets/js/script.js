@@ -125,7 +125,6 @@ function handleBuildError() {
  * @param jqXHR The XMLHttpRequest used to send this AJAX request
  */
 function handleSubmissionError(jqXHR) {
-	// TODO: Error handling
 	console.log(jqXHR);
 	var paramName = jqXHR.responseJSON.param.name;
 	var why = jqXHR.responseJSON.websiteWhy;
@@ -150,6 +149,10 @@ function getProjectProperties() {
 	var postData = {};
 	$("div.property > input").each(function() {
 		// Assigning map[id] = input value
+		if ($(this).prop("disabled")) {
+			// Don't send disabled properties
+			return;
+		}
 		postData[$(this).attr("id")] = $(this).val()
 	});
 	$("div.property > select").each(function() {
