@@ -116,6 +116,11 @@ public class ProjectRenderer(private val basePath: Path) : FileSetRenderer<Proje
             if (obj.gitRepo != null) {
                 GitHelper.setUpstream(repo, obj.gitRepo)
             }
+
+            ///// .gitignore /////
+            val gitignoreDest = relativePath(basePath, ".gitignore")
+            Files.copy(resource("/gitignore"), gitignoreDest)
+            fileWrites.add(gitignoreDest)
         }
 
         return RenderReport(fileWrites, directoryCreations)

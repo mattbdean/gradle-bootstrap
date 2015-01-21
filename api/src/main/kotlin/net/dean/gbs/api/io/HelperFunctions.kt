@@ -53,7 +53,10 @@ public fun delete(path: Path) {
  * Gets the path to the raw data for the license file.
  */
 public fun licensePath(lic: License): Path {
-    val path = "/licenses/${lic.name()}.txt"
+    return resource("/licenses/${lic.name()}.txt")
+}
+
+public fun resource(path: String): Path {
     val url = javaClass<ProjectRenderer>().getResource(path)
     try {
         return Paths.get(url.toURI())
