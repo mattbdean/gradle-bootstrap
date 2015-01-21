@@ -29,7 +29,7 @@ import java.util.Set;
 public final class ProjectModel extends Model {
     public static final String DEFAULT_NAME = "";
     public static final String DEFAULT_GROUP = "";
-    public static final String DEFAULT_VERSION = "0.0.1";
+    public static final String DEFAULT_VERSION = "0.1";
 
     @Column(name = "name", length = Constraints.GROUP_MAX_LENGTH)
     @Size(min = Constraints.NAME_MIN_LENGTH, max = Constraints.NAME_MAX_LENGTH)
