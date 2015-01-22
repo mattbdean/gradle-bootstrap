@@ -10,4 +10,8 @@ Path("/")
 Produces(MediaType.TEXT_HTML)
 public class IndexResource {
     GET public fun get(): IndexView = IndexView()
+
+    Path("googlec536b80d9a503e51.html")
+    GET public fun googleWebmaster(): String =
+        """google-site-verification: googlec536b80d9a503e51.html"""
 }
