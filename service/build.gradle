@@ -47,6 +47,10 @@ dependencies {
     testCompile "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
 
+clean {
+    delete 'src/main/resources/assets', 'src/main/resources/net/dean/gbs/web/views'
+}
+
 dropwizard {
     mainClass = 'net.dean.gbs.web.GradleBootstrap'
     dropwizardConfigFile = 'config/embedded.yml'
@@ -75,3 +79,4 @@ task copyViews(type: Copy, dependsOn: [':website:build']) {
 
 task stage(type: Copy, dependsOn: ['clean', 'fatJar', ':website:build', 'copyJs', 'copyCss', 'copyViews']) {}
 
+task run(dependsOn: ['stage', 'dropwizardRun'])
