@@ -79,4 +79,4 @@ task copyViews(type: Copy, dependsOn: [':website:build']) {
 
 task stage(type: Copy, dependsOn: ['clean', 'fatJar', ':website:build', 'copyJs', 'copyCss', 'copyViews']) {}
 
-task run(dependsOn: ['stage', 'dropwizardRun'])
+defaultTasks 'stage', 'dropwizardRun'

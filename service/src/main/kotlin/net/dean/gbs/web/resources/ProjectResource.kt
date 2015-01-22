@@ -139,7 +139,7 @@ public trait ModelResource {
     }
 
     public fun assertGitRepoUrl(upstream: Parameter<String?>): String? {
-        if (upstream.value == null)
+        if (upstream.value == null || upstream.value!!.isEmpty())
             return null
         try {
             val uri = URI(upstream.value!!)
@@ -166,7 +166,7 @@ public trait ModelResource {
     /**
      * Returns true if and only if the given parameter's value is equal to "true" (case insensitive)
      */
-    public fun assertBoolean(param: Parameter<String?>): Boolean {
+    public fun assertEqualsTrue(param: Parameter<String?>): Boolean {
         if (param.value == null) {
             return false
         }
@@ -238,7 +238,7 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
 
         // Initialize the git repo if git_url was specified OR git_init was equal to "true"
         val gitInitParam = Parameter("git_init", gitInit, ParamLocation.BODY, uriInfo)
-        val gitInitBool: Boolean = gitUpstream != null || assertBoolean(gitInitParam)
+        val gitInitBool: Boolean = gitUpstream != null || assertEqualsTrue(gitInitParam)
 
         // Create a project
         val proj = Project(name!!, group!!, effectiveVersion, gitUpstream, gitInitBool, languages.split(",").map { Language.valueOf(it.toUpperCase())} )

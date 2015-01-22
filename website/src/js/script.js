@@ -100,8 +100,8 @@ function watchForDownload(project) {
 				console.log("Submitting AJAX");
 				$.get("/project/" + project.id, function(updatedProject) {
 					watchForDownload(updatedProject)
-				}, 1000)
-			})
+				});
+			}, 1000)
 	}
 }
 
@@ -153,7 +153,14 @@ function getProjectProperties() {
 			// Don't send disabled properties
 			return;
 		}
-		postData[$(this).attr("id")] = $(this).val()
+		var value;
+		// Get boolean value of checkbox instead of "on" or "off"
+		if ($(this).attr("type") === "checkbox") {
+			value = $(this).is(":checked");
+		} else {
+			value = $(this).val()
+		}
+		postData[$(this).attr("id")] = value;
 	});
 	$("div.property > select").each(function() {
 		// Assign map[id] = comma separated list of selected options
