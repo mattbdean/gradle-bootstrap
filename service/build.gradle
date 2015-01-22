@@ -12,11 +12,17 @@ buildscript {
 
 ext {
     dropwizardVersion = '0.8.0-rc2'
+    resourcesFolder = 'src/main/resources/'
+    assetsFolder = resourcesFolder + 'assets/'
 }
 
 apply plugin: "kotlin"
 apply plugin: "net.swisstech.dropwizard"
 apply plugin: "eu.appsatori.fatjar"
+
+repositories {
+    mavenCentral()
+}
 
 fatJar {
     classifier 'fat'
@@ -28,10 +34,6 @@ fatJar {
 
     // We have to exclude signature files from the fat JAR, otherwise we'll get invalid signature file digest errors.
     exclude 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.SF'
-}
-
-repositories {
-    mavenCentral()
 }
 
 dependencies {
@@ -50,4 +52,26 @@ dropwizard {
     dropwizardConfigFile = 'config/embedded.yml'
 }
 
-task stage(dependsOn: ['clean', 'fatJar'])
+task copyJs(type: Copy, dependsOn: [':website:build']) {
+    from '../website/build/css'
+    into assetsFolder + 'css'
+}
+
+task copyCss(type: Copy, dependsOn: [':website:build']) {
+    from '../website/build/js'
+    into assetsFolder + 'js'
+}
+
+task copyViews(type: Copy, dependsOn: [':website:build']) {
+    from('../website/build') {
+        include '*.ftl'
+    }
+    into resourcesFolder + 'net/dean/gbs/web/views'
+}
+
+[copyJs, copyCss, copyViews].each {
+    it.mustRunAfter ':website:build'
+}
+
+task stage(type: Copy, dependsOn: ['clean', 'fatJar', ':website:build', 'copyJs', 'copyCss', 'copyViews']) {}
+

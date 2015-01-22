@@ -2,12 +2,16 @@
 <html>
 <head>
     <title>Gradle Bootstrap</title>
+    <!-- build:css css/style.min.css -->
     <link rel="stylesheet" href="css/style.css">
+    <!-- /build -->
     <link rel="stylesheet" href="css/chosen.min.css"/>
     <link href="https://fonts.googleapis.com/css?family=Lato|Slabo+27px|Ubuntu+Mono" rel="stylesheet" type="text/css">
     <script src="js/jquery-2.1.3.min.js"></script>
     <script src="js/chosen.jquery.min.js"></script>
+    <!-- build:js js/script.min.js -->
     <script src="js/script.js"></script>
+    <!-- /build -->
 </head>
 <body>
 <div id="content-wrapper">
