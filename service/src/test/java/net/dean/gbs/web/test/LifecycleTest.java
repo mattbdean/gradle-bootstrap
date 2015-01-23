@@ -49,7 +49,7 @@ public class LifecycleTest {
                 .register(jsonProvider)
                 .register(zipProvider);
 
-        GbsApi api = new GbsApiImpl(String.format("http://localhost:%d", RULE.getLocalPort()), client);
+        GbsApi api = new GbsApiImpl(String.format("http://localhost:%d/api/v1", RULE.getLocalPort()), client);
 
         ProjectModel project = api.createProject("myapp", "com.test", "1.0", TestingFramework.TESTNG, LoggingFramework.SLF4J,
                 License.MIT, setOf(Language.JAVA, Language.KOTLIN));

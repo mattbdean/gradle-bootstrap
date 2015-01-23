@@ -10,16 +10,18 @@ buildscript {
 
 apply plugin: 'com.moowork.grunt'
 
-task build() {}
+task build(type: GruntTask) {
+    // Check for an environmental variable called 'JS_DEBUG'. If it exists and is equal to "true", then run Grunt with
+    // it. Grunt will then NOT minify JavaScript, as to better debug it.
+    def debug = System.getenv()['JS_DEBUG']?.toLowerCase().equals("true")
+    args = ["build", "--js-debug=" + debug]
+}
 
-// makes sure on each build that grunt is installed
-grunt_build.dependsOn 'installGrunt'
+// Make sure grunt is installed
+build.dependsOn 'installGrunt'
 
-// processes your package.json before running grunt build
-grunt_build.dependsOn 'npmInstall'
-
-// runs "grunt build" as part of your gradle build
-build.dependsOn grunt_build
+// Processes package.json before running grunt
+build.dependsOn 'npmInstall'
 
 node {
     // Version of node to use.

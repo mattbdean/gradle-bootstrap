@@ -1,3 +1,9 @@
+// http://stackoverflow.com/a/646643/1275092
+if (typeof String.prototype.startsWith != 'function') {
+	String.prototype.startsWith = function (str){
+		return this.slice(0, str.length) == str;
+	};
+}
 
 $(function() {
 	$("#submit").click(function() {
@@ -13,7 +19,7 @@ $(function() {
 	refreshDependencies();
 
 	// Fill in each option
-	$.get("/project/options", function(data) {
+	$.get(api("/project/options"), function(data) {
 		var handledDefaults = [];
 		for (var option in data.enums) {
 			if (!data.enums.hasOwnProperty(option)) {
@@ -36,6 +42,13 @@ $(function() {
 		}
 	});
 });
+
+function api(path) {
+	if (!path.startsWith('/')) {
+		path = '/' + path
+	}
+	return '/api/v1' + path
+}
 
 function refreshDependencies() {
 	var depAttr = "data-depends-on";
@@ -62,7 +75,7 @@ function refreshDependencies() {
 function submitProject() {
 	$.ajax({
 		type: "POST",
-		url: "/project",
+		url: api("/project"),
 		data: getProjectProperties(),
 		contentType: "application/x-www-form-urlencoded",
 		success: function(data) {
@@ -98,7 +111,7 @@ function watchForDownload(project) {
 			console.log("Creating timeout for 1sec in advance");
 			setTimeout(function() {
 				console.log("Submitting AJAX");
-				$.get("/project/" + project.id, function(updatedProject) {
+				$.get(api("/project/") + project.id, function(updatedProject) {
 					watchForDownload(updatedProject)
 				});
 			}, 1000)
@@ -109,7 +122,7 @@ function watchForDownload(project) {
  * Downloads the given project
  */
 function download(project) {
-	window.location.href = "/project/" + project.id + "/download";
+	window.location.href = api("/project/" + project.id + "/download");
 }
 
 /**
@@ -121,7 +134,7 @@ function handleBuildError() {
 }
 
 /**
- * Handles any errors returned from POST /project
+ * Handles any errors returned from POST /api/v1/project
  * @param jqXHR The XMLHttpRequest used to send this AJAX request
  */
 function handleSubmissionError(jqXHR) {

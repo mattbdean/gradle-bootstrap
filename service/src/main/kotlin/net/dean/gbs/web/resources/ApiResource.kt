@@ -176,20 +176,17 @@ public trait ModelResource {
         return false
     }
 
-    /**
-     * Returns [param] if it is non-null or [alt] otherwise
-     */
+    /** Returns [param] if it is non-null or [alt] otherwise */
     public fun alternative<T>(param: T, alt: T): T = param ?: alt
 }
 
-Path("/project")
+Path("v1/project")
 Produces(MediaType.APPLICATION_JSON)
 Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 public class ProjectResource(public val projectDao: DataAccessObject<ProjectModel>,
                              private val builder: ProjectBuilder) : ModelResource {
 
     private val log: Logger = LoggerFactory.getLogger(javaClass)
-
 
     /**
      * Creates a new project

@@ -1,4 +1,6 @@
 server:
+  type: default
+  rootPath: /api/*
   applicationConnectors:
     - type: http
       port: 2001

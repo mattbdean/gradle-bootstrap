@@ -11,12 +11,9 @@ import org.hibernate.validator.constraints.NotEmpty as notEmpty
 import com.fasterxml.jackson.annotation.JsonProperty as jsonProperty
 import javax.validation.constraints.NotNull as notNull
 import javax.validation.Valid as valid
-import net.dean.gbs.web.db.ProjectDao
-import net.dean.gbs.web.resources.ProjectResource
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
-import java.nio.file.Paths
 import javax.ws.rs.ext.ExceptionMapper
 import org.slf4j.LoggerFactory
 import org.slf4j.Logger
@@ -28,13 +25,18 @@ import javax.servlet.http.HttpServletRequest
 import io.dropwizard.hibernate.HibernateBundle
 import net.dean.gbs.web.models.ProjectModel
 import org.joda.time.Duration
-import net.dean.gbs.web.db.DataAccessObject
 import javax.servlet.http.HttpUtils
 import io.dropwizard.assets.AssetsBundle
-import net.dean.gbs.web.resources.IndexResource
+import net.dean.gbs.web.models.GitProperties
+import javax.ws.rs.Produces
+import javax.ws.rs.GET
+import javax.ws.rs.Path
+import net.dean.gbs.web.db.DataAccessObject
+import net.dean.gbs.web.db.ProjectDao
+import java.nio.file.Paths
+import net.dean.gbs.web.resources.ProjectResource
 import io.dropwizard.views.ViewMessageBodyWriter
 import io.dropwizard.views.freemarker.FreemarkerViewRenderer
-import net.dean.gbs.web.models.GitProperties
 
 public class GradleBootstrap : Application<GradleBootstrapConf>() {
     class object {
@@ -50,9 +52,7 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
     }
 
     override fun initialize(bootstrap: Bootstrap<GradleBootstrapConf>) {
-        for (type in array("css", "js")) {
-            bootstrap.addBundle(AssetsBundle("/assets/$type", "/$type", null, type))
-        }
+        bootstrap.addBundle(AssetsBundle("/assets", "/", "index.html"))
         bootstrap.addBundle(hibernate)
     }
 
@@ -66,12 +66,7 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
         val projectBuilder = ProjectBuilder(projectDao, Paths.get(configuration.downloadDirectory), sessionFactory)
 
         array(
-                // Resources
                 ProjectResource(projectDao, projectBuilder),
-                IndexResource(),
-                // MessageBodyWriters
-                ViewMessageBodyWriter(environment.metrics(), listOf(FreemarkerViewRenderer())),
-                // ExceptionMappers
                 UnhandledExceptionLogger()
         ).forEach {
             environment.jersey().register(it)

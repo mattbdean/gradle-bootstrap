@@ -1,0 +1,5 @@
+User-Agent: *
+Disallow: /project/*/download
+Disallow: /admin
+
+Sitemap: http://gradle-bootstrap.herokuapp.com/sitemap.xml

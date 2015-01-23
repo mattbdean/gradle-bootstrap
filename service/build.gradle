@@ -48,35 +48,25 @@ dependencies {
 }
 
 clean {
-    delete 'src/main/resources/assets', 'src/main/resources/net/dean/gbs/web/views'
+    // Assets will be copied again by copyWebsite
+    delete 'src/main/resources/assets'
 }
 
 dropwizard {
     mainClass = 'net.dean.gbs.web.GradleBootstrap'
-    dropwizardConfigFile = 'config/embedded.yml'
+    dropwizardConfigFile = 'config/local.yml'
 }
 
-task copyJs(type: Copy, dependsOn: [':website:build']) {
-    from '../website/build/css'
-    into assetsFolder + 'css'
+// Copy website files into :service's resources
+task copyWebsite(type: Copy, dependsOn: [':website:build']) {
+    from '../website/build'
+    into 'src/main/resources/assets'
 }
 
-task copyCss(type: Copy, dependsOn: [':website:build']) {
-    from '../website/build/js'
-    into assetsFolder + 'js'
-}
+// Task called by Heroku to build a fully working Jar
+task stage(type: Copy, dependsOn: ['clean', 'fatJar', 'copyWebsite'])
 
-task copyViews(type: Copy, dependsOn: [':website:build']) {
-    from('../website/build') {
-        include '*.ftl'
-    }
-    into resourcesFolder + 'net/dean/gbs/web/views'
-}
+// Clean, get the latest version of the website, and run the service
+task run(dependsOn: ['clean', 'copyWebsite', 'dropwizardRun'])
 
-[copyJs, copyCss, copyViews].each {
-    it.mustRunAfter ':website:build'
-}
-
-task stage(type: Copy, dependsOn: ['clean', 'fatJar', ':website:build', 'copyJs', 'copyCss', 'copyViews']) {}
-
-defaultTasks 'stage', 'dropwizardRun'
+defaultTasks 'run'
