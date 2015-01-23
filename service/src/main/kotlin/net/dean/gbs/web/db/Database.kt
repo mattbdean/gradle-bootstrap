@@ -6,7 +6,6 @@ import io.dropwizard.hibernate.AbstractDAO
 import net.dean.gbs.web.models.ProjectModel
 import org.hibernate.SessionFactory
 import java.io.Serializable
-import net.dean.gbs.web.GradleBootstrapConf
 
 /**
  * Provides a standard interface for retrieving models from the database

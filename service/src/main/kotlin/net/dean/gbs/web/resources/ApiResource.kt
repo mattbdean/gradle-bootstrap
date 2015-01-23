@@ -77,6 +77,7 @@ public trait ModelResource {
 
         throw InvalidParamException(why = "One of ${allValues.map { it.name().toLowerCase() }.toString()} (case insensitive) was not provided",
                 param = param,
+                websiteWhy = "That isn't an option",
                 errorId = ErrorCode.NOT_ENUM_VALUE
         )
     }
@@ -93,7 +94,13 @@ public trait ModelResource {
         assertPresent(param)
 
         val uuid = param.value
-        val initException = { InvalidParamException("No resource could be found by that ID", ErrorCode.MALFORMED_UUID, param = param) }
+        val initException = {
+            val why = "No resource could be found by that ID"
+            InvalidParamException(why = why,
+                    websiteWhy = why,
+                    errorId = ErrorCode.MALFORMED_UUID,
+                    param = param)
+        }
 
         try {
             // http://stackoverflow.com/a/10693997/1275092
@@ -111,8 +118,10 @@ public trait ModelResource {
         val uuid = assertValidUuid(idParam)
         val model = dao.get(uuid)
         throwWhenTrue(model == null, {
+            val why = "No $humanFriendlyName by that ID"
             NotFoundException(
-                    why = "No $humanFriendlyName by that ID",
+                    why = why,
+                    websiteWhy = why,
                     param = idParam
             )
         })
@@ -127,10 +136,17 @@ public trait ModelResource {
         throwWhenTrue(length !in range) {
             // First letter is capitalized, the rest are not
             val name = Character.toUpperCase(readableName[0]) + readableName.substring(1).toLowerCase()
+            val websiteWhy = if (length < min) {
+                "That is too long"
+            } else {
+                "That is too short"
+
+            }
             InvalidParamException(
                     why = "$name length must be between ${range.start} and ${range.end}",
                     errorId = ErrorCode.BAD_LENGTH,
-                    param = param)
+                    param = param,
+                    websiteWhy = websiteWhy)
         }
     }
 
@@ -145,8 +161,10 @@ public trait ModelResource {
             val uri = URI(upstream.value!!)
             val acceptableProtocols = array("git", "http", "https")
             if (uri.getScheme() !in acceptableProtocols) {
+                val why = "Only acceptable schemes are ${acceptableProtocols.join(", ")}"
                 throw InvalidParamException(
-                        why = "Only acceptable schemes are ${acceptableProtocols.join(", ")}",
+                        why = why,
+                        websiteWhy = why,
                         errorId = ErrorCode.BAD_GIT_URL,
                         param = upstream
                 )
@@ -273,8 +291,10 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
 
         // Make sure the group is a valid Java identifier
         assertMatches(Constraints.GROUP_PATTERN, group.value!!) {
+            val why = "That is not a valid Java identifier"
             InvalidParamException(
-                    why = "That is not a valid Java identifier",
+                    why = why,
+                    websiteWhy = why,
                     errorId = ErrorCode.INVALID_IDENTIFIER,
                     param = group
             )
@@ -313,6 +333,7 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
         throwWhenTrue(!builder.downloadAvailable(project), {
             ForbiddenException(errorId = ErrorCode.DOWNLOAD_NOT_READY,
                     why = "Download is not ready for that project (status is '${project.getStatus()}')",
+                    websiteWhy = "That project isn't ready to download yet",
                     param = projectIdParam)
         })
 

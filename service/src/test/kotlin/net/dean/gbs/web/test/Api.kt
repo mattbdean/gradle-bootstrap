@@ -74,8 +74,7 @@ public class GbsApiImpl(baseUrl: String, private val client: Client) : GbsApi {
     }
 
     override fun download(project: ProjectModel, directory: Path): Path {
-        return client.target(baseUrl)
-                .path("project/${project.getId()}/download")
+        return target.path("/project/${project.getId()}/download")
                 .request()
                         .accept("application/zip")
                         .get(javaClass<Path>())
@@ -85,15 +84,13 @@ public class GbsApiImpl(baseUrl: String, private val client: Client) : GbsApi {
         val map = MultivaluedHashMap<String, String>()
         for ((key, value) in urlEncodedFormParams)
             map.add(key, value.toString())
-        return client.target(baseUrl)
-                .path(path)
+        return target.path(path)
                 .request(MediaType.APPLICATION_JSON)
                         .post(Entity.entity(map, MediaType.APPLICATION_FORM_URLENCODED), modelClass)
     }
 
     private fun get<T : Model>(path: String, modelClass: Class<T>): T {
-        return client.target(baseUrl)
-                .path(path)
+        return target.path(path)
                 .request(MediaType.APPLICATION_JSON)
                         .get(modelClass)
     }

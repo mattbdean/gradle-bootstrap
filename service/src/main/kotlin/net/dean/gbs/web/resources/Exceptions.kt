@@ -26,7 +26,7 @@ public enum class ErrorCode {
  */
 public data class JsonError(public val error: ErrorCode,
                             public val why: String,
-                            public val websiteWhy: String = why,
+                            public val websiteWhy: String,
                             public val param: Parameter<*>,
                             public val path: String)
 
@@ -41,7 +41,7 @@ public data class JsonError(public val error: ErrorCode,
  */
 public open class RequestException(errorId: ErrorCode,
                                    why: String,
-                                   websiteWhy: String = why,
+                                   websiteWhy: String,
                                    status: Int,
                                    public val param: Parameter<*>) : WebApplicationException(
         Response.status(status)
@@ -64,7 +64,7 @@ public open class RequestException(errorId: ErrorCode,
  */
 public abstract class MalformedParameterException(errorId: ErrorCode,
                                                   why: String,
-                                                  websiteWhy: String = why,
+                                                  websiteWhy: String,
                                                   param: Parameter<*>) : RequestException (
         errorId = errorId,
         why = why,
@@ -88,7 +88,7 @@ public class MissingRequiredParamException(param: Parameter<*>) : MalformedParam
  */
 public class InvalidParamException(why: String,
                                    errorId: ErrorCode,
-                                   websiteWhy: String = why,
+                                   websiteWhy: String,
                                    param: Parameter<*>) : MalformedParameterException(
                 errorId = errorId,
                 why = why,
@@ -97,18 +97,22 @@ public class InvalidParamException(why: String,
         )
 
 public class NotFoundException(why: String,
+                               websiteWhy: String,
                                param: Parameter<*>) : RequestException(
                 errorId = ErrorCode.NOT_FOUND,
                 why = why,
+                websiteWhy = websiteWhy,
                 param = param,
                 status = 404
 )
 
 public class ForbiddenException(why: String,
+                                websiteWhy: String,
                                 errorId: ErrorCode,
                                 param: Parameter<*>) : RequestException(
         errorId = errorId,
         why = why,
+        websiteWhy = websiteWhy,
         param = param,
         status = 403
 )
