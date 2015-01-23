@@ -8,9 +8,11 @@ import net.dean.gbs.api.models.DependencyContext
 import net.dean.gbs.api.models.GradleBuild
 import net.dean.gbs.api.models.TestingFramework
 import net.dean.gbs.api.models.License
+import java.io.File
+import org.apache.commons.io.FileUtils
 
 /** Represents the files and directories created by a FileSetRenderer */
-public data class RenderReport(public val files: List<Path>, public val directories: List<Path>)
+public data class RenderReport(public val files: List<File>, public val directories: List<File>)
 
 /** This class provides a way to generate code based off the given object */
 public trait CodeRenderer<in T> {
@@ -54,7 +56,7 @@ public trait FileSetRenderer<in T> {
 /**
  * This class is responsible for rendering Projects.
  */
-public class ProjectRenderer(private val basePath: Path) : FileSetRenderer<Project> {
+public class ProjectRenderer(private val basePath: File) : FileSetRenderer<Project> {
     class object {
         private val dependencyContext = DependencyContextRenderer()
         private val buildscriptBlock = BuildscriptBlockRenderer(dependencyContext)
@@ -68,12 +70,12 @@ public class ProjectRenderer(private val basePath: Path) : FileSetRenderer<Proje
 
     public override fun render(obj: Project): RenderReport {
         // Create directories
-        val directoryCreations: MutableList<Path> = ArrayList()
-        Files.createDirectories(basePath)
+        val directoryCreations: MutableList<File> = ArrayList()
+        mkdirs(basePath)
         directoryCreations.add(basePath)
         for (path in obj.directoriesToCreate) {
-            val p = relativePath(basePath, path)
-            Files.createDirectories(p)
+            val p = File(basePath, path)
+            mkdirs(p)
             directoryCreations.add(p)
         }
 
@@ -99,16 +101,15 @@ public class ProjectRenderer(private val basePath: Path) : FileSetRenderer<Proje
         gen.statement("rootProject.name = '${obj.name}'")
         gen.close()
 
-        val fileWrites: MutableList<Path> = ArrayList()
+        val fileWrites: MutableList<File> = ArrayList()
 
         ///// LICENSE /////
         if (obj.license != License.NONE) {
             val licenseSource = licensePath(obj.license)
-            val licenseDest = relativePath(basePath, "LICENSE")
-            Files.copy(licenseSource, licenseDest)
+            val licenseDest = File(basePath, "LICENSE")
+            FileUtils.copyFile(licenseSource, licenseDest)
             fileWrites.add(licenseDest)
         }
-
 
         ///// README.md /////
         gen.init("README.md")
@@ -124,8 +125,8 @@ public class ProjectRenderer(private val basePath: Path) : FileSetRenderer<Proje
             }
 
             ///// .gitignore /////
-            val gitignoreDest = relativePath(basePath, ".gitignore")
-            Files.copy(resource("/gitignore"), gitignoreDest)
+            val gitignoreDest = File(basePath, ".gitignore")
+            FileUtils.copyFile(resource("/gitignore"), gitignoreDest)
             fileWrites.add(gitignoreDest)
         }
 

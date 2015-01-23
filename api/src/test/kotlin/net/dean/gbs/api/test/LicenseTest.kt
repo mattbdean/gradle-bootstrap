@@ -10,7 +10,7 @@ public class LicenseTest {
     public test fun testAllLicensesExist() {
         License.values().forEach {
             val licensePath = licensePath(it)
-            assertTrue(Files.exists(licensePath))
+            assertTrue(licensePath.isFile(), "${licensePath.getAbsolutePath()} was not a file")
         }
     }
 }

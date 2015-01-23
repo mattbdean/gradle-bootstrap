@@ -20,15 +20,15 @@ public object ZipHelper {
     /**
      * Creates a zip file. The input directory must be an existing directory and the output file must not exist.
      */
-    public fun createZip(inputDir: Path, outputFile: Path) {
+    public fun createZip(inputDir: File, outputFile: File) {
         // Assert that the output file does not already exist
-        if (Files.exists(outputFile)) throw FileAlreadyExistsException(outputFile.toString())
+        if (outputFile.exists()) throw FileAlreadyExistsException(outputFile.getAbsolutePath())
         // Assert that the root path is not a file
-        if (Files.isRegularFile(inputDir)) throw IllegalArgumentException("Input directory ($inputDir) is a file")
+        if (inputDir.isFile()) throw IllegalArgumentException("Input directory (${inputDir.getAbsolutePath()}) is a file")
         // Assert that the root path is actually a directory
-        if (!Files.isDirectory(inputDir)) throw FileNotFoundException(outputFile.toString())
+        if (!inputDir.isDirectory()) throw FileNotFoundException(outputFile.toString())
 
-        val zipOut = ZipArchiveOutputStream(BufferedOutputStream(FileOutputStream(outputFile.toFile())))
+        val zipOut = ZipArchiveOutputStream(BufferedOutputStream(FileOutputStream(outputFile.getAbsolutePath())))
 
         addFileToZip(zipOut, inputDir.toString(), "")
         zipOut.close()

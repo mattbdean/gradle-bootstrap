@@ -9,6 +9,8 @@ import java.nio.file.FileVisitResult
 import java.io.IOException
 import net.dean.gbs.api.models.License
 import java.io.FileNotFoundException
+import java.io.File
+import org.apache.commons.io.FileUtils
 
 /**
  * Retrieves a normalized path relative to the given path.
@@ -49,17 +51,21 @@ public fun delete(path: Path) {
     }
 }
 
+public fun mkdirs(dir: File) {
+    FileUtils.forceMkdir(dir)
+}
+
 /**
  * Gets the path to the raw data for the license file.
  */
-public fun licensePath(lic: License): Path {
+public fun licensePath(lic: License): File {
     return resource("/licenses/${lic.name()}.txt")
 }
 
-public fun resource(path: String): Path {
+public fun resource(path: String): File {
     val url = javaClass<ProjectRenderer>().getResource(path)
     try {
-        return Paths.get(url.toURI())
+        return File(url.toURI())
     } catch (e: NullPointerException) {
         throw FileNotFoundException(path)
     }

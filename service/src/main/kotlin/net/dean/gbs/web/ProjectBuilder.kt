@@ -1,9 +1,7 @@
 package net.dean.gbs.web
 
 import net.dean.gbs.web.models.ProjectModel
-import java.nio.file.Path
 import java.nio.file.Files
-import net.dean.gbs.api.io.relativePath
 import net.dean.gbs.web.models.BuildStatus
 import net.dean.gbs.api.models.Project
 import net.dean.gbs.api.models.TestingFramework
@@ -14,13 +12,16 @@ import java.io.OutputStream
 import org.slf4j.LoggerFactory
 import net.dean.gbs.api.io.ProjectRenderer
 import net.dean.gbs.api.io.ZipHelper
-import net.dean.gbs.api.io.delete
 import org.hibernate.SessionFactory
 import org.hibernate.context.internal.ManagedSessionContext
 import org.hibernate.Session
 import net.dean.gbs.web.db.DataAccessObject
 import net.dean.gbs.api.models.Language
 import java.io.FileNotFoundException
+import java.io.File
+import org.apache.commons.io.FileUtils
+import net.dean.gbs.api.io.delete
+import net.dean.gbs.api.io.mkdirs
 
 /**
  * This class provides a way to create zip files from project models. If sessionFactory is null, no session will be
@@ -28,11 +29,11 @@ import java.io.FileNotFoundException
  * testing purposes.
  */
 public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
-                            private val storageFolder: Path,
+                            private val storageFolder: File,
                             private val sessionFactory: SessionFactory) {
     {
-        if (!Files.exists(storageFolder)) {
-            Files.createDirectories(storageFolder)
+        if (!storageFolder.exists()) {
+            mkdirs(storageFolder)
         }
     }
 
@@ -58,8 +59,9 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
             val projectPath = getUnzippedPath(model)
             try {
                 val renderer = ProjectRenderer(projectPath)
+
                 // Ensure we have somewhere to work
-                Files.createDirectories(projectPath)
+                mkdirs(projectPath)
                 val project = toProject(model)
 
                 // Create the project files
@@ -67,7 +69,7 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
                 val zipPath = getZipPath(model)
 
                 // Make sure the zip file has an existing parent directory
-                Files.createDirectories(zipPath.getParent())
+                mkdirs(zipPath.getParentFile())
                 // Create the zip file
                 ZipHelper.createZip(projectPath, zipPath)
                 // Download is ready
@@ -77,7 +79,7 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
                 log.error("Build errored", ex)
             } finally {
                 // Remove the unzipped project directory
-                delete(projectPath)
+                delete(projectPath.toPath())
             }
         }
     }
@@ -128,7 +130,7 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
         }
     }
 
-    public fun downloadAvailable(project: ProjectModel): Boolean = Files.isRegularFile(getZipPath(project))
+    public fun downloadAvailable(project: ProjectModel): Boolean = getZipPath(project).isFile()
 
     public fun stream(project: ProjectModel): Pair<String, StreamingOutput> {
         if (!downloadAvailable(project))
@@ -136,9 +138,9 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
 
         val file = getZipPath(project)
 
-        return file.getFileName().toString() to object: StreamingOutput {
+        return file.getName() to object: StreamingOutput {
             override fun write(output: OutputStream) {
-                Files.copy(file, output)
+                FileUtils.copyFile(file, output)
             }
         }
     }
@@ -146,11 +148,11 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
     /** Returns the name of the immediate subdirectory of [storageFolder] where files for this project will be placed. */
     private fun getBaseName(project: ProjectModel): String = project.getId().toString()
     /** Returns the directory in which the project's file structure will be created */
-    private fun getUnzippedPath(project: ProjectModel): Path =
-            relativePath(storageFolder, getBaseName(project), filterFilename(project.getName()))
+    private fun getUnzippedPath(project: ProjectModel): File =
+            File(File(storageFolder, getBaseName(project)), filterFilename(project.getName()))
     /** Returns the location of a project's zip file */
-    private fun getZipPath(project: ProjectModel): Path =
-            relativePath(storageFolder, getBaseName(project), filterFilename(project.getName()) + ".zip")
+    private fun getZipPath(project: ProjectModel): File =
+            File(File(storageFolder, getBaseName(project)), filterFilename(project.getName()) + ".zip")
     /** Replaces all characters except characters A-Z (case insensitive), 0-9, periods, and hyphens */
     private fun filterFilename(name: String): String = name.replaceAll("[^a-zA-Z0-9.-]", "_");
 

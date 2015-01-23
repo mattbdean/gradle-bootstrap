@@ -8,6 +8,7 @@ import java.io.Writer
 import java.util.ArrayList
 import java.nio.file.Files
 import kotlin.platform.platformStatic
+import java.io.File
 
 /**
  * This class encapsulates an OutputStream to assist with the generation of generic, bracket based code. The Path
@@ -20,12 +21,12 @@ import kotlin.platform.platformStatic
  * Groovy (sorry Python). Grammar must be provided by the user and therefore there is is no guarantee that code produced
  * by this class will be syntactically valid.
  */
-public class CodeGenerator(private val root: Path) : Closeable {
+public class CodeGenerator(private val root: File) : Closeable {
     class object {
         private val newLine = System.lineSeparator()
     }
     private val charset = StandardCharsets.UTF_8
-    private var path: Path? = null
+    private var path: File? = null
         set(value) {
             if (value != null)
                 _history.add(value)
@@ -37,14 +38,14 @@ public class CodeGenerator(private val root: Path) : Closeable {
     private val indent: Indent = Indent.spaces(4)
 
     // Only allow private write access
-    public val history: List<Path>
+    public val history: List<File>
         get() = _history
-    private val _history: MutableList<Path> = ArrayList()
+    private val _history: MutableList<File> = ArrayList()
 
     public fun init(fileName: String) {
         checkWriting(false)
-        this.path = relativePath(root, fileName)
-        this.writer = Files.newBufferedWriter(path, charset)
+        this.path = File(root, fileName)
+        this.writer = Files.newBufferedWriter(path!!.toPath(), charset)
         this.writing = true
     }
 

@@ -1,8 +1,6 @@
 package net.dean.gbs.api.test
 
-import java.nio.file.Paths
 import java.nio.file.Files
-import java.nio.file.Path
 import org.junit.Test as test
 import org.junit.Assert
 import kotlin.properties.Delegates
@@ -13,13 +11,13 @@ import net.dean.gbs.api.models.LoggingFramework
 import net.dean.gbs.api.models.TestingFramework
 import net.dean.gbs.api.models.Project
 import net.dean.gbs.api.io.RenderReport
-import net.dean.gbs.api.io.delete
-import net.dean.gbs.api.io.relativePath
 import net.dean.gbs.api.io.ZipHelper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import kotlin.test.assertEquals
+import java.io.File
+import org.apache.commons.io.FileUtils
 
 public class CreationTest {
     private val processLogger = ProcessOutputAdapter()
@@ -60,7 +58,7 @@ public class CreationTest {
      * Runs a full suite of validation tests, including validating the report from ProjectRenderer.render(), creating a
      * zip archive of the directory structure, and making sure a 'gradle build' succeeds for the given project
      */
-    private fun validateProject(proj: Project, root: Path, zip: Boolean = false) {
+    private fun validateProject(proj: Project, root: File, zip: Boolean = false) {
         validateProjetExportReport(ProjectRenderer(root).render(proj))
         // Testing zip functionality is only required for one project. Testing multiple will only serve to make the test longer
         if (zip)
@@ -71,8 +69,8 @@ public class CreationTest {
             validateGit(root)
     }
 
-    private fun validateGit(rootPath: Path) {
-        val repo = FileRepositoryBuilder.create(relativePath(rootPath, ".git").toFile())
+    private fun validateGit(rootPath: File) {
+        val repo = FileRepositoryBuilder.create(File(rootPath, ".git"))
         val config = repo.getConfig()
         assertEquals(upstreamUrl, config.getString("remote", "origin", "url"))
     }
@@ -80,14 +78,13 @@ public class CreationTest {
     /**
      * Executes "gradle build" in a given directory and asserts that the exit code of that process is equal to 0.
      */
-    private fun validateGradleBuild(rootPath: Path) {
+    private fun validateGradleBuild(rootPath: File) {
         val command = array("gradle", "build")
-        val dir = rootPath.toFile()
         val process = ProcessBuilder()
-                .directory(dir)
+                .directory(rootPath)
                 .command(*command)
                 .start()
-        processLogger.attach(process, rootPath.getFileName().toString())
+        processLogger.attach(process, rootPath.getName().toString())
 
         val exitCode = process.waitFor()
         // An exit code of 0 means the process completed without error
@@ -99,10 +96,10 @@ public class CreationTest {
      */
     fun validateProjetExportReport(report: RenderReport) {
         for (dir in report.directories) {
-            assert(Files.isDirectory(dir), "Path $dir claimed to be a directory but was not")
+            assert(dir.isDirectory(), "Path $dir claimed to be a directory but was not")
         }
         for (file in report.files) {
-            assert(Files.isRegularFile(file), "Path $file claimed to be a file but was not")
+            assert(file.isFile(), "Path $file claimed to be a file but was not")
         }
     }
 
@@ -110,25 +107,25 @@ public class CreationTest {
      * Returns a Pair of a Project to its root Pat based on the calling method. The group will be
      * "com.example.$name" and its base path will be "build/projects/$name
      */
-    private fun newProject(name: String, lang: Language): Pair<Project, Path> {
-        val path = Paths.get("build/projects/normal/$name")
+    private fun newProject(name: String, lang: Language): Pair<Project, File> {
+        val path = File("build/projects/normal/$name")
         val proj = Project(name, "com.example.$name", "0.1", gitRepo = upstreamUrl, languages = setOf(lang))
         // Delete the files before generating it so that if we want to examine the crated files after creation, we can.
-        delete(path)
+        path.delete()
         return proj to path
     }
 
     /**
      * Makes sure that a zip file is created for the given project in the given path
      */
-    private fun testZip(proj: Project, basePath: Path) {
-        val zipFile = relativePath(basePath, "../../zipped/${proj.name}.zip")
+    private fun testZip(proj: Project, basePath: File) {
+        val zipFile = File(basePath, "../../zipped/${proj.name}.zip")
         // Clean up from last time
-        delete(zipFile)
+        zipFile.delete()
 
         // Make sure the directories exist first
-        Files.createDirectories(zipFile.getParent())
+        FileUtils.forceMkdir(zipFile.getParentFile())
         ZipHelper.createZip(basePath, zipFile)
-        assert(Files.isRegularFile(zipFile), "Output file does not exist")
+        assert(zipFile.isFile(), "Output file does not exist")
     }
 }

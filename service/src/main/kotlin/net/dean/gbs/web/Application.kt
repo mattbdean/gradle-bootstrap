@@ -33,10 +33,10 @@ import javax.ws.rs.GET
 import javax.ws.rs.Path
 import net.dean.gbs.web.db.DataAccessObject
 import net.dean.gbs.web.db.ProjectDao
-import java.nio.file.Paths
 import net.dean.gbs.web.resources.ProjectResource
 import io.dropwizard.views.ViewMessageBodyWriter
 import io.dropwizard.views.freemarker.FreemarkerViewRenderer
+import java.io.File
 
 public class GradleBootstrap : Application<GradleBootstrapConf>() {
     class object {
@@ -63,7 +63,7 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
         // Initialize database
         val sessionFactory = hibernate.getSessionFactory()
         val projectDao: DataAccessObject<ProjectModel> = ProjectDao(sessionFactory)
-        val projectBuilder = ProjectBuilder(projectDao, Paths.get(configuration.downloadDirectory), sessionFactory)
+        val projectBuilder = ProjectBuilder(projectDao, File(configuration.downloadDirectory), sessionFactory)
 
         array(
                 ProjectResource(projectDao, projectBuilder),
