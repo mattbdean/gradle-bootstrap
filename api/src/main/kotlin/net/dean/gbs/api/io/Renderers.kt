@@ -1,21 +1,17 @@
 package net.dean.gbs.api.io
 
-import java.nio.file.Path
-import net.dean.gbs.api.models.Project
-import java.util.ArrayList
-import java.nio.file.Files
-import net.dean.gbs.api.models.DependencyContext
-import net.dean.gbs.api.models.GradleBuild
-import net.dean.gbs.api.models.TestingFramework
-import net.dean.gbs.api.models.License
-import java.io.File
+import net.dean.gbs.api.models.*
 import org.apache.commons.io.FileUtils
+import java.io.File
+import java.util.*
+import kotlin.collections.isNotEmpty
+import kotlin.collections.sorted
 
 /** Represents the files and directories created by a FileSetRenderer */
 public data class RenderReport(public val files: List<File>, public val directories: List<File>)
 
 /** This class provides a way to generate code based off the given object */
-public trait CodeRenderer<in T> {
+public interface CodeRenderer<in T> {
     /** Generates code based on a given ojbect */
     public fun render(obj: T, gen: CodeGenerator)
 }
@@ -25,10 +21,10 @@ public trait CodeRenderer<in T> {
  * automatically be opened that has the same name as [name], and [renderBlock] will be called inside the context of that
  * block. After [renderBlock] returns, the block will be closed.
  */
-public trait CodeBlockRenderer<in T> : CodeRenderer<T> {
+public interface CodeBlockRenderer<in T> : CodeRenderer<T> {
     /** The name of the code block that will be created */
     public val name: String
-    public override final fun render(obj: T, gen: CodeGenerator) {
+    public override fun render(obj: T, gen: CodeGenerator) {
         if (!willRender(obj)) {
             return
         }
@@ -42,14 +38,14 @@ public trait CodeBlockRenderer<in T> : CodeRenderer<T> {
     public fun willRender(obj: T): Boolean = true
 
     /** Renders the contents of a code block */
-    protected fun renderBlock(obj: T, gen: CodeGenerator)
+    public fun renderBlock(obj: T, gen: CodeGenerator)
 }
 
 /**
  * This trait provides a standard interface for creating files and a log of files and directories that were created
  */
-public trait FileSetRenderer<in T> {
-    protected val gen: CodeGenerator
+public interface FileSetRenderer<in T> {
+    public val gen: CodeGenerator
     public fun render(obj: T): RenderReport
 }
 
@@ -57,7 +53,7 @@ public trait FileSetRenderer<in T> {
  * This class is responsible for rendering Projects.
  */
 public class ProjectRenderer(private val basePath: File) : FileSetRenderer<Project> {
-    class object {
+    companion object {
         private val dependencyContext = DependencyContextRenderer()
         private val buildscriptBlock = BuildscriptBlockRenderer(dependencyContext)
         private val plugins = PluginsRenderer()
@@ -66,7 +62,7 @@ public class ProjectRenderer(private val basePath: File) : FileSetRenderer<Proje
         private val testBlock = TestBlockRenderer()
     }
 
-    protected override val gen: CodeGenerator = CodeGenerator(basePath)
+    public override val gen: CodeGenerator = CodeGenerator(basePath)
 
     public override fun render(obj: Project): RenderReport {
         // Create directories
@@ -144,13 +140,13 @@ public class DependencyContextRenderer : CodeRenderer<DependencyContext> {
     public override fun render(obj: DependencyContext, gen: CodeGenerator) {
         if (obj.repos.isNotEmpty()) {
             gen.openBlock("repositories")
-            for (repo in obj.repos.sort())
+            for (repo in obj.repos.sorted())
                 gen.statement(repo.method)
             gen.closeBlock()
         }
         if (obj.deps.isNotEmpty()) {
             gen.openBlock("dependencies")
-            for (dep in obj.deps.sort())
+            for (dep in obj.deps.sorted())
                 gen.statement(dep.gradleFormat())
             gen.closeBlock()
         }
@@ -168,7 +164,7 @@ public class BuildscriptBlockRenderer(private val depContext: DependencyContextR
         return obj.metaContext.deps.isNotEmpty() || obj.metaContext.repos.isNotEmpty()
     }
 
-    protected override fun renderBlock(obj: GradleBuild, gen: CodeGenerator) {
+    override fun renderBlock(obj: GradleBuild, gen: CodeGenerator) {
         // Just open up the block and let DependencyContextRenderer do its thing
         depContext.render(obj.metaContext, gen)
     }

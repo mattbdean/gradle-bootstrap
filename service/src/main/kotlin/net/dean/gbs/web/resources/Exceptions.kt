@@ -10,14 +10,14 @@ import javax.ws.rs.core.UriInfo
  * Reasons why a request did not succeed
  */
 public enum class ErrorCode {
-    BAD_GIT_URL
-    BAD_LENGTH
-    DOWNLOAD_NOT_READY
-    INVALID_IDENTIFIER
-    MALFORMED_UUID
-    MALFORMED_URL
-    MISSING_PARAM
-    NOT_ENUM_VALUE
+    BAD_GIT_URL,
+    BAD_LENGTH,
+    DOWNLOAD_NOT_READY,
+    INVALID_IDENTIFIER,
+    MALFORMED_UUID,
+    MALFORMED_URL,
+    MISSING_PARAM,
+    NOT_ENUM_VALUE,
     NOT_FOUND
 }
 
@@ -53,7 +53,7 @@ public open class RequestException(errorId: ErrorCode,
                 .type(MediaType.APPLICATION_JSON)
                 .build()) {
 
-    class object {
+    companion object {
         public fun formatParam(p: Parameter<*>): String = "<${p.name}>"
     }
 }

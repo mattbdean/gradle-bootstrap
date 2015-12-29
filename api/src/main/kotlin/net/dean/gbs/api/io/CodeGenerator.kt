@@ -1,14 +1,11 @@
 package net.dean.gbs.api.io
 
-import java.nio.file.Path
 import java.io.Closeable
-import java.nio.charset.StandardCharsets
-import java.util.HashMap
-import java.io.Writer
-import java.util.ArrayList
-import java.nio.file.Files
-import kotlin.platform.platformStatic
 import java.io.File
+import java.io.Writer
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.util.*
 
 /**
  * This class encapsulates an OutputStream to assist with the generation of generic, bracket based code. The Path
@@ -22,16 +19,18 @@ import java.io.File
  * by this class will be syntactically valid.
  */
 public class CodeGenerator(private val root: File) : Closeable {
-    class object {
+    companion object {
         private val newLine = System.lineSeparator()
     }
     private val charset = StandardCharsets.UTF_8
-    private var path: File? = null
+    private var _path: File? = null
+    private var path: File?
         set(value) {
             if (value != null)
                 _history.add(value)
-            $path = value
+            _path = value
         }
+        get() = _path
     private var writer: Writer? = null
     private var writing: Boolean = false
     private var lastLineType: LineType? = null
@@ -128,9 +127,9 @@ public class CodeGenerator(private val root: File) : Closeable {
  */
 private enum class LineType {
     /** Basic line. Declaration, method call, etc. */
-    STATEMENT
+    STATEMENT,
     /** Indicates the start of a new code block */
-    OPEN_BLOCK
+    OPEN_BLOCK,
     /** Indicates the end of a code block */
     END_BLOCK
 }
@@ -138,23 +137,22 @@ private enum class LineType {
 /**
  * Represents the indentation of a file, in either tabs or spaces.
  */
-public data class Indent private(public val spaces: Boolean, public val spaceCount: Int) {
-    class object {
-        public platformStatic fun spaces(count: Int): Indent = Indent(true, count)
-        public platformStatic fun tabs(): Indent = Indent(false, -1)
+public data class Indent private constructor(public val spaces: Boolean, public val spaceCount: Int) {
+    companion object {
+        public @JvmStatic fun spaces(count: Int): Indent = Indent(true, count)
+        public @JvmStatic fun tabs(): Indent = Indent(false, -1)
     }
 
     private val indents: MutableMap<Int, String> = HashMap()
     private val baseIndent: String
 
+    private var _current: Int = 0
     /**
      * Current indentation. Can be changed using inc() or dec()
      */
-    public var current: Int = 0
+    public var current: Int
         private set(value) {
-            if (value < 0) {
-                throw IllegalArgumentException("Cannot have a negative indent")
-            }
+            if (value < 0) throw IllegalArgumentException("Cannot have a negative indent")
             if (!indents.containsKey(value)) {
                 val sb = StringBuilder()
                 var temp = 0
@@ -165,8 +163,29 @@ public data class Indent private(public val spaces: Boolean, public val spaceCou
 
                 indents.put(value, sb.toString())
             }
-            $current = value
+            _current = value
         }
+        get() = _current
+
+    init {
+        // Re-initialize currentIndent because the first initialization writes to the backing field directly and does
+        // not go through our custom setter, which we want
+        current = 0
+
+        // Figure out our base indent
+        baseIndent = if (spaces) {
+            StringBuilder().apply {
+                var temp = 0
+                while (temp < spaceCount) {
+                    append(' ')
+                    temp++
+                }
+            }.toString()
+        } else {
+            "\t"
+        }
+    }
+
 
     /** Increases the indent by one */
     public fun inc() {
@@ -186,25 +205,6 @@ public data class Indent private(public val spaces: Boolean, public val spaceCou
     /** Gets the current indentation as a String */
     public fun value(): String {
         return indents.get(current)!!
-    }
-
-    {
-        // Re-initialize currentIndent because the first initialization writes to the backing field directly and does
-        // not go through our custom setter, which we want
-        current = 0
-
-        // Figure out our base indent
-        baseIndent = if (spaces) {
-            StringBuilder {
-                var temp = 0
-                while (temp < spaceCount) {
-                    append(' ')
-                    temp++
-                }
-            }.toString()
-        } else {
-            "\t"
-        }
     }
 }
 

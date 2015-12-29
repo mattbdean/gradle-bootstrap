@@ -1,6 +1,9 @@
 package net.dean.gbs.api.models
 
-import java.util.HashSet
+import java.util.*
+import kotlin.text.replace
+import kotlin.text.substring
+import kotlin.text.toLowerCase
 
 /**
  * Represents a Gradle project
@@ -18,13 +21,13 @@ public class Project(val name: String,
     public val build: GradleBuild = GradleBuild()
     public val languages: Set<Language> = HashSet(languages);
 
-    {
-        if (languages.size() == 0)
+    init {
+        if (languages.size == 0)
             throw IllegalArgumentException("Must have at least one language")
 
-        for (sourceSet in array("main", "test")) {
+        for (sourceSet in arrayOf("main", "test")) {
             for (l in languages) {
-                val name = l.name().toLowerCase()
+                val name = l.name.toLowerCase()
                 val packageFolders = group.replace('.', '/')
                 // Example: src/main/java/com/example/app
                 directoriesToCreate.add("src/$sourceSet/$name/$packageFolders")
@@ -40,20 +43,11 @@ public class Project(val name: String,
 /**
  * A collection of languages that will be used in this project
  */
-public enum class Language : ModularGradleComponent, HumanReadable {
-    JAVA {
-        override val dep: Dependency? = null
-    }
-    GROOVY {
-        override val dep: Dependency = Dependency("org.codehaus.groovy", "grovy-all")
-    }
-
-    SCALA {
-        override val dep: Dependency = Dependency("org.scala-lang", "scala-library")
-    }
-
-    KOTLIN {
-        override val dep: Dependency = Dependency("org.jetbrains.kotlin", "kotlin-stdlib")
+public enum class Language(public val dep: Dependency? = null) : ModularGradleComponent, HumanReadable {
+    JAVA(),
+    GROOVY(Dependency("org.codehaus.groovy", "grovy-all")),
+    SCALA(Dependency("org.scala-lang", "scala-library")),
+    KOTLIN(Dependency("org.jetbrains.kotlin", "kotlin-stdlib")) {
 
         override fun configureOnto(build: GradleBuild) {
             // See http://kotlinlang.org/docs/reference/using-gradle.html#configuring-dependencies
@@ -62,36 +56,35 @@ public enum class Language : ModularGradleComponent, HumanReadable {
             build.plugins.add("kotlin")
 
             build.projectContext.add(Repository.MAVEN_CENTRAL)
-            build.projectContext.add(dep)
-        }
-    }
-
-    public override val humanReadable = name()[0] + name().substring(1).toLowerCase()
-    public abstract val dep: Dependency?
-    public override fun configureOnto(build: GradleBuild) {
-        build.plugins.add(name().toLowerCase())
-        if (dep != null)
             build.projectContext.add(dep!!)
+        }
+    };
+
+    public override val humanReadable = name[0].toString() + name.substring(1).toLowerCase()
+    public override fun configureOnto(build: GradleBuild) {
+        build.plugins.add(name.toLowerCase())
+        if (dep != null)
+            build.projectContext.add(dep)
     }
 }
 
-public trait HumanReadable {
+public interface HumanReadable {
     public val humanReadable: String
 }
 
 /**
  * The different licenses to choose from
  */
-public enum class License: HumanReadable {
+public enum class License : HumanReadable {
     NONE {
         override val humanReadable = "None"
-    }
+    },
     APACHE2 {
         override val humanReadable = "Apache License 2.0"
-    }
+    },
     GPL2 {
         override val humanReadable = "GNU GPL v2.0"
-    }
+    },
     MIT {
         override val humanReadable = "MIT License"
     }

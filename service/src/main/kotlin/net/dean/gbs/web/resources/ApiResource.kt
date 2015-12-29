@@ -1,41 +1,30 @@
 package net.dean.gbs.web.resources
 
-import javax.ws.rs.Path
-import javax.ws.rs.Produces
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.GET
-import javax.ws.rs.POST
-import javax.ws.rs.Consumes
-import javax.ws.rs.PathParam
-import net.dean.gbs.api.models.TestingFramework
-import net.dean.gbs.api.models.LoggingFramework
-import net.dean.gbs.api.models.Language
-import net.dean.gbs.api.models.License
-import javax.ws.rs.FormParam
-import net.dean.gbs.api.models.Project
-import java.util.UUID
-import net.dean.gbs.web.Parameter
-import net.dean.gbs.web.ParamLocation
-import net.dean.gbs.web.models.ProjectModel
+import io.dropwizard.hibernate.UnitOfWork
+import net.dean.gbs.api.models.*
 import net.dean.gbs.web.GradleBootstrapConf
-import net.dean.gbs.web.models.BuildStatus
+import net.dean.gbs.web.ParamLocation
+import net.dean.gbs.web.Parameter
 import net.dean.gbs.web.ProjectBuilder
 import net.dean.gbs.web.db.DataAccessObject
-import net.dean.gbs.web.models.Model
+import net.dean.gbs.web.models.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import javax.ws.rs.core.Context
-import javax.ws.rs.core.UriInfo
-import io.dropwizard.hibernate.UnitOfWork
-import javax.ws.rs.core.Response
-import net.dean.gbs.api.models.HumanReadable
-import net.dean.gbs.web.models.Constraints
-import java.util.regex.Pattern
-import net.dean.gbs.web.models.ProjectOptionModel
-import java.net.URISyntaxException
 import java.net.URI
+import java.net.URISyntaxException
+import java.util.*
+import java.util.regex.Pattern
+import javax.ws.rs.*
+import javax.ws.rs.core.Context
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
+import javax.ws.rs.core.UriInfo
+import kotlin.collections.contains
+import kotlin.collections.joinToString
+import kotlin.collections.map
+import kotlin.text.*
 
-public trait ModelResource {
+public interface ModelResource {
     /**
      * Throws the given lazy-evaluated RequestException when [test] is true
      */
@@ -47,7 +36,7 @@ public trait ModelResource {
      * Throws a MissingRequiredParamException when the given parameter is null or it is a String and is empty
      */
     public fun assertPresent(param: Parameter<*>) {
-        throwWhenTrue(param.value == null || (param.value is String && (param.value as String).isEmpty()),
+        throwWhenTrue(param.value == null || (param.value is String && param.value.isEmpty()),
                 { MissingRequiredParamException(param) })
     }
 
@@ -68,14 +57,14 @@ public trait ModelResource {
      *
      * Returns the enum value of the given constant's name
      */
-    public fun assertStringIsEnumValue<T : Enum<T>>(param: Parameter<String>, allValues: Array<T>): T {
+    public fun <T : Enum<T>> assertStringIsEnumValue(param: Parameter<String>, allValues: Array<T>): T {
         for (enumValue in allValues) {
-            if ((param.value).equalsIgnoreCase(enumValue.name())) {
+            if ((param.value).equals(enumValue.name, ignoreCase = true)) {
                 return enumValue
             }
         }
 
-        throw InvalidParamException(why = "One of ${allValues.map { it.name().toLowerCase() }.toString()} (case insensitive) was not provided",
+        throw InvalidParamException(why = "One of ${allValues.map { it.name.toLowerCase() }.toString()} (case insensitive) was not provided",
                 param = param,
                 websiteWhy = "That isn't an option",
                 errorId = ErrorCode.NOT_ENUM_VALUE
@@ -114,7 +103,7 @@ public trait ModelResource {
         }
     }
 
-    public fun assertInDatabase<T : Model>(idParam: Parameter<String>, dao: DataAccessObject<T>, humanFriendlyName: String): T {
+    public fun <T : Model> assertInDatabase(idParam: Parameter<String>, dao: DataAccessObject<T>, humanFriendlyName: String): T {
         val uuid = assertValidUuid(idParam)
         val model = dao.get(uuid)
         throwWhenTrue(model == null, {
@@ -132,10 +121,10 @@ public trait ModelResource {
     public fun assertLengthInRange(param: Parameter<String?>, min: Int, max: Int, readableName: String) {
         assertPresent(param)
         val range = min..max
-        val length = param.value!!.length()
+        val length = param.value!!.length
         throwWhenTrue(length !in range) {
             // First letter is capitalized, the rest are not
-            val name = Character.toUpperCase(readableName[0]) + readableName.substring(1).toLowerCase()
+            val name = Character.toUpperCase(readableName[0]).toString() + readableName.substring(1).toLowerCase()
             val websiteWhy = if (length < min) {
                 "That is too long"
             } else {
@@ -143,7 +132,7 @@ public trait ModelResource {
 
             }
             InvalidParamException(
-                    why = "$name length must be between ${range.start} and ${range.end}",
+                    why = "$name length must be between ${range.start} and ${range.endInclusive}",
                     errorId = ErrorCode.BAD_LENGTH,
                     param = param,
                     websiteWhy = websiteWhy)
@@ -155,13 +144,13 @@ public trait ModelResource {
     }
 
     public fun assertGitRepoUrl(upstream: Parameter<String?>): String? {
-        if (upstream.value == null || upstream.value!!.isEmpty())
+        if (upstream.value == null || upstream.value.isEmpty())
             return null
         try {
-            val uri = URI(upstream.value!!)
-            val acceptableProtocols = array("git", "http", "https")
-            if (uri.getScheme() !in acceptableProtocols) {
-                val why = "Only acceptable schemes are ${acceptableProtocols.join(", ")}"
+            val uri = URI(upstream.value)
+            val acceptableProtocols = arrayOf("git", "http", "https")
+            if (uri.scheme !in acceptableProtocols) {
+                val why = "Only acceptable schemes are ${acceptableProtocols.joinToString(separator = ", ")}"
                 throw InvalidParamException(
                         why = why,
                         websiteWhy = why,
@@ -189,18 +178,18 @@ public trait ModelResource {
             return false
         }
 
-        if (param.value!!.toLowerCase() == "true")
+        if (param.value.toLowerCase() == "true")
             return true
         return false
     }
 
     /** Returns [param] if it is non-null or [alt] otherwise */
-    public fun alternative<T>(param: T, alt: T): T = param ?: alt
+    public fun <T> alternative(param: T, alt: T): T = param ?: alt
 }
 
-Path("v1/project")
-Produces(MediaType.APPLICATION_JSON)
-Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+@Path("v1/project")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 public class ProjectResource(public val projectDao: DataAccessObject<ProjectModel>,
                              private val builder: ProjectBuilder) : ModelResource {
 
@@ -217,16 +206,16 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
      * license: Project's license. Must be one of the values in [License].
      * language: Comma-separated list of zero or more values in [Language].
      */
-    POST public fun createProject(Context uriInfo: UriInfo,
-                           FormParam("name") name: String?,
-                           FormParam("group") group: String?,
-                           FormParam("version") version: String?,
-                           FormParam("testing") testing: String?,
-                           FormParam("logging") logging: String?,
-                           FormParam("license") license: String?,
-                           FormParam("language") languages: String?,
-                           FormParam("git_init") gitInit: String?,
-                           FormParam("git_url") gitUrl: String?): ProjectModel {
+    @POST public fun createProject(@Context uriInfo: UriInfo,
+                           @FormParam("name") name: String?,
+                           @FormParam("group") group: String?,
+                           @FormParam("version") version: String?,
+                           @FormParam("testing") testing: String?,
+                           @FormParam("logging") logging: String?,
+                           @FormParam("license") license: String?,
+                           @FormParam("language") languages: String?,
+                           @FormParam("git_init") gitInit: String?,
+                           @FormParam("git_url") gitUrl: String?): ProjectModel {
         // name, and group, and lang are required
         val nameParam = Parameter("name", name, ParamLocation.BODY, uriInfo)
         val groupParam = Parameter("group", group, ParamLocation.BODY, uriInfo)
@@ -290,7 +279,7 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
         }
 
         // Make sure the group is a valid Java identifier
-        assertMatches(Constraints.GROUP_PATTERN, group.value!!) {
+        assertMatches(Constraints.GROUP_PATTERN, group.value) {
             val why = "That is not a valid Java identifier"
             InvalidParamException(
                     why = why,
@@ -306,22 +295,22 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
         assertLengthInRange(ver, Constraints.VERSION_MIN_LENGTH, Constraints.VERSION_MAX_LENGTH, "version")
     }
 
-    Path("list")
-    UnitOfWork(readOnly = true)
-    GET public fun getAllProjects(): List<ProjectModel> {
+    @Path("list")
+    @UnitOfWork(readOnly = true)
+    @GET public fun getAllProjects(): List<ProjectModel> {
         // TODO: Pagination
         return projectDao.getAll()
     }
 
-    Path("{id}")
-    UnitOfWork(readOnly = true)
-    GET public fun getProject(Context uriInfo: UriInfo, PathParam("id") id: String): ProjectModel =
+    @Path("{id}")
+    @UnitOfWork(readOnly = true)
+    @GET public fun getProject(@Context uriInfo: UriInfo, @PathParam("id") id: String): ProjectModel =
         assertInDatabase(Parameter("id", id, ParamLocation.URI, uriInfo), projectDao, "project")
 
-    Path("{id}/download")
-    Produces("application/zip")
-    UnitOfWork(readOnly = true)
-    GET public fun download(Context uriInfo: UriInfo, PathParam("id") id: String): Response {
+    @Path("{id}/download")
+    @Produces("application/zip")
+    @UnitOfWork(readOnly = true)
+    @GET public fun download(@Context uriInfo: UriInfo, @PathParam("id") id: String): Response {
         // The project ID must be present
         val projectIdParam = Parameter("id", id, ParamLocation.URI, uriInfo)
         assertPresent(projectIdParam)
@@ -345,22 +334,14 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
                 .build()
     }
 
-    Path("options")
-    GET public fun getOptions(): ProjectOptionModel = ProjectOptionModel.INSTANCE
+    @Path("options")
+    @GET public fun getOptions(): ProjectOptionModel = ProjectOptionModel.INSTANCE
 }
 
-public enum class ProjectOption(public val values: Array<out HumanReadable>, public val default: HumanReadable) {
-    LICENSE: ProjectOption(
-            values = License.values(),
-            default = License.NONE)
-    LANGUAGE: ProjectOption(
-            values = Language.values(),
-            default = Language.JAVA)
-    TESTING : ProjectOption(
-            values = TestingFramework.values(),
-            default = TestingFramework.NONE)
-    LOGGING : ProjectOption(
-            values = LoggingFramework.values(),
-            default = LoggingFramework.NONE)
+public enum class ProjectOption(public val vals: Array<out HumanReadable>, public val default: HumanReadable) {
+    LICENSE(vals = License.values(), default = License.NONE),
+    LANGUAGE(vals = Language.values(), default = Language.JAVA),
+    TESTING(vals = TestingFramework.values(), default = TestingFramework.NONE),
+    LOGGING(vals = LoggingFramework.values(), default = LoggingFramework.NONE)
 }
 

@@ -1,30 +1,38 @@
 package net.dean.gbs.api.models
 
-import java.util.HashSet
+import java.util.*
+import kotlin.text.equals
+import kotlin.text.isNotEmpty
 
 /**
  * Represents the skeleton of a build.gradle file
  */
 public class GradleBuild {
-    class object {
+    companion object {
         public val GRADLE_WRAPPER_VERSION: String = "2.2.1"
     }
     /** Dependencies and repositories for the Gradle buildscript */
     public val metaContext: DependencyContext = DependencyContext()
     /** Dependencies and repositories for the Gradle project */
     public val projectContext: DependencyContext = DependencyContext()
-    public var testing: TestingFramework = TestingFramework.NONE
+
+    public var _testing: TestingFramework = TestingFramework.NONE
+    public var testing: TestingFramework
         set(value) {
-            $testing.deconfigureFrom(this)
+            _testing.deconfigureFrom(this)
             value.configureOnto(this)
-            $testing = value
+            _testing = value
         }
-    public var logging: LoggingFramework = LoggingFramework.NONE
+        get() = _testing
+
+    private var _logging: LoggingFramework = LoggingFramework.NONE
+    public var logging: LoggingFramework
         set(value) {
-            $logging.deconfigureFrom(this)
+            _logging.deconfigureFrom(this)
             value.configureOnto(this)
-            $logging = value
+            _logging = value
         }
+        get() = _logging
 
     public val plugins: MutableSet<String> = HashSet()
 
@@ -49,11 +57,11 @@ public class GradleBuild {
  * List of dependency scopes
  */
 public enum class Scope(public val method: String) {
-    COMPILE: Scope("compile")
-    RUNTIME: Scope("runtime")
-    TEST_COMPILE: Scope("testCompile")
-    TEST_RUNTIME: Scope("testRuntime")
-    CLASSPATH: Scope("classpath")
+    COMPILE("compile"),
+    RUNTIME("runtime"),
+    TEST_COMPILE("testCompile"),
+    TEST_RUNTIME("testRuntime"),
+    CLASSPATH("classpath")
 }
 
 public data class Dependency(public val group: String,
@@ -97,8 +105,8 @@ public data class Dependency(public val group: String,
 }
 
 public enum class Repository(val method: String) {
-    JCENTER: Repository("jcenter()")
-    MAVEN_CENTRAL: Repository("mavenCentral()")
+    JCENTER("jcenter()"),
+    MAVEN_CENTRAL("mavenCentral()")
 }
 
 /**
@@ -118,14 +126,14 @@ public class DependencyContext {
 
     fun add(dep: Dependency) {
         for (d in internalDeps) {
-            if (d.group.equalsIgnoreCase(dep.group) && d.name.equalsIgnoreCase(dep.name)) {
+            if (d.group.equals(dep.group, ignoreCase = true) && d.name.equals(dep.name, ignoreCase = true)) {
                 // Only add unique dependencies
                 return
             }
         }
 
         internalDeps.add(dep)
-        if (internalDeps.size() > 0 && internalRepos.size() == 0) {
+        if (internalDeps.size > 0 && internalRepos.size == 0) {
             // Make sure we can resolve our dependencies
             internalRepos.add(Repository.MAVEN_CENTRAL)
         }

@@ -19,7 +19,7 @@ public class ProjectOptionModel {
         Map<String, String> defaults = new HashMap<String, String>();
 
         for (ProjectOption option : OPTIONS) {
-            HumanReadable[] humanReadables = option.getValues();
+            HumanReadable[] humanReadables = option.getVals();
             Map<String, String> values = new HashMap<String, String>(humanReadables.length);
             for (HumanReadable readable : humanReadables) {
                 values.put(readable.toString().toLowerCase(), readable.getHumanReadable());

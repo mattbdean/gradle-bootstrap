@@ -1,22 +1,21 @@
 package net.dean.gbs.web.test
 
-import javax.ws.rs.core.MultivaluedMap
-import net.dean.gbs.web.models.ProjectModel
-import kotlin.platform.platformStatic
-import net.dean.gbs.api.models.Project
-import net.dean.gbs.web.models.BuildStatus
-import java.util.UUID
-import org.joda.time.DateTime
-import net.dean.gbs.api.models.Language
-import net.dean.gbs.api.models.License
-import net.dean.gbs.api.models.LoggingFramework
-import net.dean.gbs.api.models.TestingFramework
+import com.google.common.io.Resources
+import net.dean.gbs.api.models.*
 import net.dean.gbs.web.GradleBootstrapConf
+import net.dean.gbs.web.models.BuildStatus
+import net.dean.gbs.web.models.ProjectModel
+import org.joda.time.DateTime
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
-import java.io.File
-import com.google.common.io.Resources
+import java.util.*
 import javax.ws.rs.core.MultivaluedHashMap
+import javax.ws.rs.core.MultivaluedMap
+import kotlin.collections.forEach
+import kotlin.collections.joinToString
+import kotlin.collections.listOf
+import kotlin.collections.mapOf
 
 public object TestUtils {
     private val name = "app"
@@ -30,7 +29,7 @@ public object TestUtils {
     private val uuid = UUID.fromString("f3b4d46c-e691-4c6b-b7c7-feed491d0dbd")
     private val gitUrl: String = "https://github.com/example/example"
 
-    public platformStatic fun newProject(): Project {
+    public @JvmStatic fun newProject(): Project {
         val proj = Project(name, group, version, gitUrl, true, languages)
         proj.build.testing = testing
         proj.build.logging = logging
@@ -38,27 +37,27 @@ public object TestUtils {
         return proj
     }
 
-    public platformStatic fun newProjectModel(): ProjectModel {
+    public @JvmStatic fun newProjectModel(): ProjectModel {
         val proj = ProjectModel.fromProject(newProject(), created, created, BuildStatus.ENQUEUED)
-        proj.setId(uuid)
+        proj.id = uuid
         return proj
     }
 
-    public platformStatic fun toMultivaluedMap(model: ProjectModel): MultivaluedMap<String, String> {
+    public @JvmStatic fun toMultivaluedMap(model: ProjectModel): MultivaluedMap<String, String> {
         val map = MultivaluedHashMap<String, String>()
         mapOf(
-                "name" to model.getName(),
-                "group" to model.getGroup(),
-                "version" to model.getVersion(),
-                "testing" to model.getTestingFramework(),
-                "logging" to model.getLoggingFramework(),
-                "license" to model.getLicense(),
-                "languages" to model.getLanguages().join(",")
-        ).forEach { if (it.getValue() != null) map.add(it.getKey(), it.getValue()!!) }
+                "name" to model.name,
+                "group" to model.group,
+                "version" to model.version,
+                "testing" to model.testingFramework,
+                "logging" to model.loggingFramework,
+                "license" to model.license,
+                "languages" to model.languages.joinToString(",")
+        ).forEach { if (it.value != null) map.add(it.key, it.value!!) }
         return map
     }
 
-    public platformStatic fun createTempDir(): Path = Files.createTempDirectory("gradle-bootstrap")
+    public @JvmStatic fun createTempDir(): Path = Files.createTempDirectory("gradle-bootstrap")
 
-    public platformStatic fun getResource(name: String): String = File(Resources.getResource(name).toURI()).getAbsolutePath()
+    public @JvmStatic fun getResource(name: String): String = File(Resources.getResource(name).toURI()).absolutePath
 }

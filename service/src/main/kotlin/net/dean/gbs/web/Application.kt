@@ -1,51 +1,44 @@
 package net.dean.gbs.web
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.util.ISO8601DateFormat
 import io.dropwizard.Application
+import io.dropwizard.Configuration
+import io.dropwizard.assets.AssetsBundle
+import io.dropwizard.db.DataSourceFactory
+import io.dropwizard.hibernate.HibernateBundle
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import kotlin.platform.platformStatic
-import io.dropwizard.Configuration
-import com.fasterxml.jackson.databind.util.ISO8601DateFormat
-import io.dropwizard.db.DataSourceFactory
-import org.hibernate.validator.constraints.NotEmpty as notEmpty
-import com.fasterxml.jackson.annotation.JsonProperty as jsonProperty
-import javax.validation.constraints.NotNull as notNull
-import javax.validation.Valid as valid
-import com.fasterxml.jackson.databind.ObjectMapper
-import org.joda.time.DateTime
-import org.joda.time.DateTimeZone
-import javax.ws.rs.ext.ExceptionMapper
-import org.slf4j.LoggerFactory
-import org.slf4j.Logger
-import javax.ws.rs.core.Response
-import javax.ws.rs.ext.Provider as provider
-import javax.ws.rs.WebApplicationException
-import javax.ws.rs.core.Context as context
-import javax.servlet.http.HttpServletRequest
-import io.dropwizard.hibernate.HibernateBundle
-import net.dean.gbs.web.models.ProjectModel
-import org.joda.time.Duration
-import javax.servlet.http.HttpUtils
-import io.dropwizard.assets.AssetsBundle
-import net.dean.gbs.web.models.GitProperties
-import javax.ws.rs.Produces
-import javax.ws.rs.GET
-import javax.ws.rs.Path
 import net.dean.gbs.web.db.DataAccessObject
 import net.dean.gbs.web.db.ProjectDao
+import net.dean.gbs.web.models.GitProperties
+import net.dean.gbs.web.models.ProjectModel
 import net.dean.gbs.web.resources.ProjectResource
-import io.dropwizard.views.ViewMessageBodyWriter
-import io.dropwizard.views.freemarker.FreemarkerViewRenderer
+import org.joda.time.DateTime
+import org.joda.time.DateTimeZone
+import org.joda.time.Duration
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpUtils
+import javax.ws.rs.WebApplicationException
+import javax.ws.rs.core.Response
+import javax.ws.rs.ext.ExceptionMapper
+import kotlin.collections.forEach
+import com.fasterxml.jackson.annotation.JsonProperty as jsonProperty
+import org.hibernate.validator.constraints.NotEmpty as notEmpty
+import javax.validation.Valid as valid
+import javax.validation.constraints.NotNull as notNull
+import javax.ws.rs.core.Context as context
+import javax.ws.rs.ext.Provider as provider
+
+public fun main(args: Array<String>) {
+    GradleBootstrap().run(*args)
+}
 
 public class GradleBootstrap : Application<GradleBootstrapConf>() {
-    class object {
-        public platformStatic fun main(args: Array<String>) {
-            GradleBootstrap().run(*args)
-        }
-    }
-
-    val hibernate = object: HibernateBundle<GradleBootstrapConf>(javaClass<ProjectModel>(), javaClass<GitProperties>()) {
+    val hibernate = object: HibernateBundle<GradleBootstrapConf>(ProjectModel::class.java, GitProperties::class.java) {
         override fun getDataSourceFactory(configuration: GradleBootstrapConf?): DataSourceFactory? {
             return configuration!!.database
         }
@@ -58,14 +51,14 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
 
     override fun run(configuration: GradleBootstrapConf, environment: Environment) {
         // Configure the object mapper
-        GradleBootstrapConf.configureObjectMapper(environment.getObjectMapper())
+        GradleBootstrapConf.configureObjectMapper(environment.objectMapper)
 
         // Initialize database
-        val sessionFactory = hibernate.getSessionFactory()
+        val sessionFactory = hibernate.sessionFactory
         val projectDao: DataAccessObject<ProjectModel> = ProjectDao(sessionFactory)
         val projectBuilder = ProjectBuilder(projectDao, File(configuration.downloadDirectory), sessionFactory)
 
-        array(
+        arrayOf(
                 ProjectResource(projectDao, projectBuilder),
                 UnhandledExceptionLogger()
         ).forEach {
@@ -75,32 +68,32 @@ public class GradleBootstrap : Application<GradleBootstrapConf>() {
 }
 
 public class GradleBootstrapConf : Configuration() {
-    public valid notNull jsonProperty val database: DataSourceFactory = DataSourceFactory()
-    public valid notNull jsonProperty val downloadDirectory: String = ""
-    class object {
-        public platformStatic val timeZone: DateTimeZone = DateTimeZone.UTC
+    public @valid @notNull @jsonProperty val database: DataSourceFactory = DataSourceFactory()
+    public @valid @notNull @jsonProperty val downloadDirectory: String = ""
+    companion object {
+        public val timeZone: DateTimeZone = DateTimeZone.UTC
 
         /** The amount of time that can pass before one download pass expires. Equivalent to one hour. */
-        public platformStatic val expirationDuration: Duration = Duration.standardHours(1)
+        public val expirationDuration: Duration = Duration.standardHours(1)
 
-        public platformStatic fun configureObjectMapper(mapper: ObjectMapper) {
+        public @JvmStatic fun configureObjectMapper(mapper: ObjectMapper) {
             // Dates will now automatically be serialized into the ISO-8601 format
             mapper.setDateFormat(ISO8601DateFormat())
         }
 
-        public platformStatic fun getCurrentDate(): DateTime = DateTime(timeZone)
-        public platformStatic fun getPassExpirationDate(date: DateTime = getCurrentDate()): DateTime = date.plus(expirationDuration)
+        public @JvmStatic fun getCurrentDate(): DateTime = DateTime(timeZone)
+        public @JvmStatic fun getPassExpirationDate(date: DateTime = getCurrentDate()): DateTime = date.plus(expirationDuration)
     }
 }
 
-public provider class UnhandledExceptionLogger : ExceptionMapper<Throwable> {
+public @provider class UnhandledExceptionLogger : ExceptionMapper<Throwable> {
     private val log: Logger = LoggerFactory.getLogger(javaClass)
-    public context var request: HttpServletRequest? = null
+    public @context var request: HttpServletRequest? = null
 
     override fun toResponse(t: Throwable?): Response? {
         if (t is WebApplicationException) {
             // These will be shown to the user, don't mess with this
-            return t.getResponse()
+            return t.response
         }
 
         log.error("Unhandled exception", t)

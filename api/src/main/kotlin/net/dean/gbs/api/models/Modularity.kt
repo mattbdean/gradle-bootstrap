@@ -1,14 +1,14 @@
 package net.dean.gbs.api.models
 
-public trait Component<T> {
+public interface Component<T> {
     public fun configureOnto(it: T)
 }
 
-public trait ProjectComponent : Component<Project> {
+public interface ProjectComponent : Component<Project> {
     public override fun configureOnto(it: Project)
 }
 
-public trait ModularGradleComponent : ProjectComponent {
+public interface ModularGradleComponent : ProjectComponent {
     public fun configureOnto(build: GradleBuild)
 
     override fun configureOnto(it: Project) {
@@ -16,7 +16,7 @@ public trait ModularGradleComponent : ProjectComponent {
     }
 }
 
-public trait Framework : ModularGradleComponent {
+public interface Framework : ModularGradleComponent {
     public val deps: Array<Dependency>
 
     public override fun configureOnto(build: GradleBuild) {

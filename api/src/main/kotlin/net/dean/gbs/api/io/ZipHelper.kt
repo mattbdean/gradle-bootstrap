@@ -1,16 +1,10 @@
 package net.dean.gbs.api.io
 
-import java.nio.file.Path
-import java.nio.file.Files
-import java.nio.file.FileAlreadyExistsException
-import java.io.FileNotFoundException
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
-import java.io.BufferedOutputStream
-import java.io.FileOutputStream
-import java.io.File
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
-import java.io.FileInputStream
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
 import org.apache.commons.compress.utils.IOUtils
+import java.io.*
+import java.nio.file.FileAlreadyExistsException
 
 /**
  * A singleton class to help with the creation of zip archives. Adapted from
@@ -22,13 +16,13 @@ public object ZipHelper {
      */
     public fun createZip(inputDir: File, outputFile: File) {
         // Assert that the output file does not already exist
-        if (outputFile.exists()) throw FileAlreadyExistsException(outputFile.getAbsolutePath())
+        if (outputFile.exists()) throw FileAlreadyExistsException(outputFile.absolutePath)
         // Assert that the root path is not a file
-        if (inputDir.isFile()) throw IllegalArgumentException("Input directory (${inputDir.getAbsolutePath()}) is a file")
+        if (inputDir.isFile) throw IllegalArgumentException("Input directory (${inputDir.absolutePath}) is a file")
         // Assert that the root path is actually a directory
-        if (!inputDir.isDirectory()) throw FileNotFoundException(outputFile.toString())
+        if (!inputDir.isDirectory) throw FileNotFoundException(outputFile.toString())
 
-        val zipOut = ZipArchiveOutputStream(BufferedOutputStream(FileOutputStream(outputFile.getAbsolutePath())))
+        val zipOut = ZipArchiveOutputStream(BufferedOutputStream(FileOutputStream(outputFile.absolutePath)))
 
         addFileToZip(zipOut, inputDir.toString(), "")
         zipOut.close()
@@ -36,13 +30,13 @@ public object ZipHelper {
 
     private fun addFileToZip(zipOut: ZipArchiveOutputStream, path: String, base: String) {
         val f = File(path)
-        val entryName = base + f.getName()
+        val entryName = base + f.name
         val zipEntry = ZipArchiveEntry(f, entryName)
         // Write to the ZIP manifest
         zipOut.putArchiveEntry(zipEntry)
 
         // Write the actual file
-        if (f.isFile()) {
+        if (f.isFile) {
             val fileInput = FileInputStream(f)
             IOUtils.copy(fileInput, zipOut)
             zipOut.closeArchiveEntry()
@@ -53,7 +47,7 @@ public object ZipHelper {
 
             if (children != null)
                 for (child in children)
-                    addFileToZip(zipOut, child.getAbsolutePath(), entryName + "/")
+                    addFileToZip(zipOut, child.absolutePath, entryName + "/")
         }
     }
 }

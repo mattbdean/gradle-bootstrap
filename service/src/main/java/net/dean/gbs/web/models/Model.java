@@ -79,9 +79,8 @@ public abstract class Model {
 
         if (!createdAt.equals(model.createdAt)) return false;
         if (!updatedAt.equals(model.updatedAt)) return false;
-        if (!id.equals(model.id)) return false;
+        return id.equals(model.id);
 
-        return true;
     }
 
     @Override

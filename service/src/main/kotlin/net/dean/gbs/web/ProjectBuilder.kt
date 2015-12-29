@@ -1,27 +1,24 @@
 package net.dean.gbs.web
 
-import net.dean.gbs.web.models.ProjectModel
-import java.nio.file.Files
-import net.dean.gbs.web.models.BuildStatus
-import net.dean.gbs.api.models.Project
-import net.dean.gbs.api.models.TestingFramework
-import net.dean.gbs.api.models.LoggingFramework
-import net.dean.gbs.api.models.License
-import javax.ws.rs.core.StreamingOutput
-import java.io.OutputStream
-import org.slf4j.LoggerFactory
 import net.dean.gbs.api.io.ProjectRenderer
 import net.dean.gbs.api.io.ZipHelper
-import org.hibernate.SessionFactory
-import org.hibernate.context.internal.ManagedSessionContext
-import org.hibernate.Session
-import net.dean.gbs.web.db.DataAccessObject
-import net.dean.gbs.api.models.Language
-import java.io.FileNotFoundException
-import java.io.File
-import org.apache.commons.io.FileUtils
 import net.dean.gbs.api.io.delete
 import net.dean.gbs.api.io.mkdirs
+import net.dean.gbs.api.models.*
+import net.dean.gbs.web.db.DataAccessObject
+import net.dean.gbs.web.models.BuildStatus
+import net.dean.gbs.web.models.ProjectModel
+import org.apache.commons.io.FileUtils
+import org.hibernate.Session
+import org.hibernate.SessionFactory
+import org.hibernate.context.internal.ManagedSessionContext
+import org.slf4j.LoggerFactory
+import java.io.File
+import java.io.FileNotFoundException
+import javax.ws.rs.core.StreamingOutput
+import kotlin.collections.map
+import kotlin.text.replace
+import kotlin.text.toUpperCase
 
 /**
  * This class provides a way to create zip files from project models. If sessionFactory is null, no session will be
@@ -31,7 +28,7 @@ import net.dean.gbs.api.io.mkdirs
 public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
                             private val storageFolder: File,
                             private val sessionFactory: SessionFactory) {
-    {
+    init {
         if (!storageFolder.exists()) {
             mkdirs(storageFolder)
         }
@@ -44,7 +41,7 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
          * Updates the build status if and only if the current build status is not the same as the one given
          */
         fun update(status: BuildStatus) {
-            if (model.getStatus().toUpperCase() != status.name()) {
+            if (model.status.toUpperCase() != status.name) {
                 model.setStatus(status)
                 dao.update(model)
             }
@@ -69,7 +66,7 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
                 val zipPath = getZipPath(model)
 
                 // Make sure the zip file has an existing parent directory
-                mkdirs(zipPath.getParentFile())
+                mkdirs(zipPath.parentFile)
                 // Create the zip file
                 ZipHelper.createZip(projectPath, zipPath)
                 // Download is ready
@@ -85,14 +82,14 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
     }
 
     private fun commitTransaction(session: Session) {
-        log.info("Commiting transaction ${session.getTransaction()}")
-        session.getTransaction().commit()
+        log.info("Commiting transaction ${session.transaction}")
+        session.transaction.commit()
     }
 
     private fun rollbackTransaction(session: Session) {
-        log.info("Rolling back transaction ${session.getTransaction()}")
-        val trx = session.getTransaction()
-        if (trx != null && trx.isActive())
+        log.info("Rolling back transaction ${session.transaction}")
+        val trx = session.transaction
+        if (trx != null && trx.isActive)
             trx.rollback()
     }
 
@@ -107,14 +104,14 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
         try {
             // Open a session
             session = sessionFactory.openSession()
-            session!!.getTransaction().begin()
+            session!!.transaction.begin()
             ManagedSessionContext.bind(session)
 
             // Mess with the database
             doWork()
 
             // Commit the transaction
-            commitTransaction(session!!)
+            commitTransaction(session)
 
             // All operations completed successfully
             onSuccess()
@@ -124,13 +121,13 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
         } finally {
             if (session != null) {
                 // Clean up the session
-                session!!.close()
+                session.close()
                 ManagedSessionContext.unbind(sessionFactory)
             }
         }
     }
 
-    public fun downloadAvailable(project: ProjectModel): Boolean = getZipPath(project).isFile()
+    public fun downloadAvailable(project: ProjectModel): Boolean = getZipPath(project).isFile
 
     public fun stream(project: ProjectModel): Pair<String, StreamingOutput> {
         if (!downloadAvailable(project))
@@ -138,35 +135,31 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
 
         val file = getZipPath(project)
 
-        return file.getName() to object: StreamingOutput {
-            override fun write(output: OutputStream) {
-                FileUtils.copyFile(file, output)
-            }
-        }
+        return file.name to StreamingOutput { output -> FileUtils.copyFile(file, output) }
     }
 
     /** Returns the name of the immediate subdirectory of [storageFolder] where files for this project will be placed. */
-    private fun getBaseName(project: ProjectModel): String = project.getId().toString()
+    private fun getBaseName(project: ProjectModel): String = project.id.toString()
     /** Returns the directory in which the project's file structure will be created */
     private fun getUnzippedPath(project: ProjectModel): File =
-            File(File(storageFolder, getBaseName(project)), filterFilename(project.getName()))
+            File(File(storageFolder, getBaseName(project)), filterFilename(project.name))
     /** Returns the location of a project's zip file */
     private fun getZipPath(project: ProjectModel): File =
-            File(File(storageFolder, getBaseName(project)), filterFilename(project.getName()) + ".zip")
+            File(File(storageFolder, getBaseName(project)), filterFilename(project.name) + ".zip")
     /** Replaces all characters except characters A-Z (case insensitive), 0-9, periods, and hyphens */
-    private fun filterFilename(name: String): String = name.replaceAll("[^a-zA-Z0-9.-]", "_");
+    private fun filterFilename(name: String): String = name.replace("[^a-zA-Z0-9.-]", "_");
 
     /** Creates a Project out of the given ProjectModel */
     private fun toProject(model: ProjectModel): Project {
-        val proj = Project(model.getName()!!,
-                model.getGroup()!!,
-                model.getVersion()!!,
-                model.getGit().getUrl(),
-                model.getGit().isInit(),
-                model.getLanguages().map { Language.valueOf(it.toUpperCase()) })
-        if (model.getTestingFramework() != null) proj.build.testing = TestingFramework.valueOf(model.getTestingFramework()!!.toUpperCase())
-        if (model.getLoggingFramework() != null) proj.build.logging = LoggingFramework.valueOf(model.getLoggingFramework()!!.toUpperCase())
-        if (model.getLicense() != null) proj.license = License.valueOf(model.getLicense()!!.toUpperCase())
+        val proj = Project(model.name!!,
+                model.group!!,
+                model.version!!,
+                model.git.url,
+                model.git.isInit,
+                model.languages.map { Language.valueOf(it.toUpperCase()) })
+        if (model.testingFramework != null) proj.build.testing = TestingFramework.valueOf(model.testingFramework!!.toUpperCase())
+        if (model.loggingFramework != null) proj.build.logging = LoggingFramework.valueOf(model.loggingFramework!!.toUpperCase())
+        if (model.license != null) proj.license = License.valueOf(model.license!!.toUpperCase())
         return proj
     }
 }

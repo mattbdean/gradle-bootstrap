@@ -1,16 +1,12 @@
 package net.dean.gbs.api.io
 
-import java.nio.file.Path
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.SimpleFileVisitor
-import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.FileVisitResult
-import java.io.IOException
 import net.dean.gbs.api.models.License
-import java.io.FileNotFoundException
-import java.io.File
 import org.apache.commons.io.FileUtils
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.nio.file.*
+import java.nio.file.attribute.BasicFileAttributes
 
 /**
  * Retrieves a normalized path relative to the given path.
@@ -59,11 +55,11 @@ public fun mkdirs(dir: File) {
  * Gets the path to the raw data for the license file.
  */
 public fun licensePath(lic: License): File {
-    return resource("/licenses/${lic.name()}.txt")
+    return resource("/licenses/${lic.name}.txt")
 }
 
 public fun resource(path: String): File {
-    val url = javaClass<ProjectRenderer>().getResource(path)
+    val url = ProjectRenderer::class.java.getResource(path)
     try {
         return File(url.toURI())
     } catch (e: NullPointerException) {
