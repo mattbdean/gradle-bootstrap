@@ -75,17 +75,10 @@ public interface HumanReadable {
 /**
  * The different licenses to choose from
  */
-public enum class License : HumanReadable {
-    NONE {
-        override val humanReadable = "None"
-    },
-    APACHE2 {
-        override val humanReadable = "Apache License 2.0"
-    },
-    GPL2 {
-        override val humanReadable = "GNU GPL v2.0"
-    },
-    MIT {
-        override val humanReadable = "MIT License"
-    }
+public enum class License(public override val humanReadable: String) : HumanReadable {
+    NONE("None"),
+    APACHE2("Apache License 2.0"),
+    GPL2("GNU GPL v2.0"),
+    MIT("MIT License"),
+    WTFPL("WTFPL")
 }
