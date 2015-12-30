@@ -54,8 +54,3 @@ Retrieves information about a project with a given ID
 
 Downloads a project
 
-## Branches
-
-`master`: Stable branch. Pushed to Heroku when updated.
-
-`develop`: Unstable branch. All work should be pushed to this branch before merging into master.
