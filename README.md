@@ -17,3 +17,9 @@ Gradle Bootstrap is a simple Kotlin webapp that lets you create Gradle project s
 `gradle :service:stage` packages the entire project into a runnable Jar at `service/libs/service-<version>-fat.jar`
 
 `gradlew :service:run` builds and runs the website. See [`http://localhost:2001`](http://localhost:2001) once it's up and running.
+
+## Branches
+
+`master`: Stable branch. Pushed to Heroku when updated.
+
+`develop`: Unstable branch. All work should be pushed to this branch before merging into master.
