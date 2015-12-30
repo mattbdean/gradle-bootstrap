@@ -37,7 +37,7 @@ fatJar {
 }
 
 dependencies {
-    for (module in ['assets', 'core', 'db', 'jackson', 'logging', 'hibernate', 'views-freemarker']) {
+    for (module in ['assets', 'core', 'db', 'jackson', 'logging', 'hibernate']) {
         compile "io.dropwizard:dropwizard-$module:$dropwizardVersion"
     }
 
