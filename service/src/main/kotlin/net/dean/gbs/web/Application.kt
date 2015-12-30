@@ -21,7 +21,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpUtils
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.ExceptionMapper
@@ -97,7 +96,7 @@ public @provider class UnhandledExceptionLogger : ExceptionMapper<Throwable> {
         }
 
         log.error("Unhandled exception", t)
-        log.error("URL: ${HttpUtils.getRequestURL(request)}")
+        log.error("URL: ${request!!.requestURL}")
         return Response.status(500)
                 .build()
     }
