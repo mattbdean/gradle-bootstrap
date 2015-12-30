@@ -198,13 +198,13 @@ public class ProjectResource(public val projectDao: DataAccessObject<ProjectMode
     /**
      * Creates a new project
      *
-     * name: Project's name. Required.
-     * group: Project's group/package. Required.
-     * version: Project's version.
-     * testing: Testing framework. Must be one of the values in [TestingFramework].
-     * logging: Logging framework. Must be one of the values in [LoggingFramework].
-     * license: Project's license. Must be one of the values in [License].
-     * language: Comma-separated list of zero or more values in [Language].
+     * @param name Project's name. Required.
+     * @param group Project's group/package. Required.
+     * @param version Project's version.
+     * @param testing Testing framework. Must be one of the values in [TestingFramework].
+     * @param logging Logging framework. Must be one of the values in [LoggingFramework].
+     * @param license Project's license. Must be one of the values in [License].
+     * @param languages Comma-separated list of zero or more values in [Language].
      */
     @POST public fun createProject(@Context uriInfo: UriInfo,
                            @FormParam("name") name: String?,

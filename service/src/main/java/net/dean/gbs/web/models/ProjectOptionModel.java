@@ -14,7 +14,7 @@ public class ProjectOptionModel {
     private Map<String, Object> data;
 
     private ProjectOptionModel() {
-        this.data = new HashMap<String, Object>(OPTIONS.length);
+        this.data = new HashMap<>(OPTIONS.length);
         Map<String, Object> enums = new HashMap<String, Object>();
         Map<String, String> defaults = new HashMap<String, String>();
 
