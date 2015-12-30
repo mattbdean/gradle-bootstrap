@@ -9,6 +9,7 @@ import net.dean.gbs.web.db.DataAccessObject
 import net.dean.gbs.web.models.BuildStatus
 import net.dean.gbs.web.models.ProjectModel
 import org.apache.commons.io.FileUtils
+import org.hibernate.HibernateException
 import org.hibernate.Session
 import org.hibernate.SessionFactory
 import org.hibernate.context.internal.ManagedSessionContext
@@ -115,8 +116,10 @@ public class ProjectBuilder(private val dao: DataAccessObject<ProjectModel>,
 
             // All operations completed successfully
             onSuccess()
-        } catch (ex: Exception) {
+        } catch (ex: HibernateException) {
             rollbackTransaction(session!!)
+            onFail(ex)
+        } catch (ex: Exception) {
             onFail(ex)
         } finally {
             if (session != null) {

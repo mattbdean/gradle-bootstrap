@@ -4,14 +4,14 @@ buildscript {
     }
 
     dependencies {
-        classpath 'net.swisstech:gradle-dropwizard:+'
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.0'
+        classpath 'net.swisstech:gradle-dropwizard:1.1.11'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.2'
         classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
     }
 }
 
 ext {
-    dropwizardVersion = '0.8.0-rc2'
+    dropwizardVersion = '0.9.1'
     resourcesFolder = 'src/main/resources/'
     assetsFolder = resourcesFolder + 'assets/'
 }
@@ -41,8 +41,9 @@ dependencies {
         compile "io.dropwizard:dropwizard-$module:$dropwizardVersion"
     }
 
-    runtime "com.h2database:h2:1.4.184"
-    compile "org.jadira.usertype:usertype.core:3.2.0.GA"
+    runtime "com.h2database:h2:1.4.190"
+    // Would use 5.0.0.GA but something Hibernate-related causes tests to fail
+    compile "org.jadira.usertype:usertype.core:4.0.0.GA"
     compile project(':api')
     testCompile "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
