@@ -16,10 +16,3 @@ dependencies {
     testCompile "junit:junit:4.11"
 }
 
-test {
-    testLogging {
-        // Show stderr and stdout (useful for exceptions)
-        showStandardStreams = true
-    }
-}
-

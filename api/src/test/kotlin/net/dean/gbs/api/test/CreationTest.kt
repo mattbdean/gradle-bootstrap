@@ -74,7 +74,7 @@ public class CreationTest {
      * Executes "gradle build" in a given directory and asserts that the exit code of that process is equal to 0.
      */
     private fun validateGradleBuild(rootPath: File) {
-        val command = arrayOf("gradle", "build")
+        val command = arrayOf("gradle", "build", "--no-daemon")
         val process = ProcessBuilder()
                 .directory(rootPath)
                 .command(*command)
