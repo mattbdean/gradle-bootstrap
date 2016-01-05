@@ -31,14 +31,14 @@ All API methods produce JSON unless otherwise specified.
 1. `name`: Project name (ex: "JRAW")
 2. `group`: Group/package: (ex: "net.dean.jraw")
 3. `language`: A comma-separated list of languages
-4. `version` (Optional) Self explanatory
-5. `testing`: (Optional) Testing framework.
-6. `logging`: (Optional) Logging framework.
-7. `license`: (Optional) Self explanatory
+4. `version` (Optional)
+5. `testing`: (Optional)
+6. `logging`: (Optional)
+7. `license`: (Optional)
 8. `git_init`: (Optional) If true, will initialize a .git directory in the base of the project
-9. `git_url`: (Optional) If true, will initialize a .git directory and set `origin` to the given URL
+9. `git_url`: (Optional) If true, will initialize a .git directory and set `origin` to the given URL. Implies `git_init=true`.
 
-For acceptable parameters for `logging`, `testing`, `language`, and `license`, see `/api/v1/project/options`
+For acceptable values for `logging`, `testing`, `language`, and `license`, see `/api/v1/project/options`
 
 #### [`GET  /api/v1/project/options`](https://gradle-bootstrap.herokuapp.com/api/v1/project/options)
 
